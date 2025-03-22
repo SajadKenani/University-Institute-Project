@@ -1,0 +1,123 @@
+package endpoints
+
+import (
+	"Backend/db"
+	"Backend/handlers"
+	"Backend/utils"
+	"log"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/microcosm-cc/bluemonday"
+)
+
+func HandleAnnouncementCreation(ctx *gin.Context) {
+	var announcement handlers.Announcement
+
+	if err := ctx.ShouldBindJSON(&announcement); err != nil {
+		utils.HandleError(ctx, err, "Invalid request data", http.StatusBadRequest)
+		return
+	}
+
+	// Prevent empty inputs
+	if strings.TrimSpace(announcement.Title) == "" || strings.TrimSpace(announcement.Content) == "" {
+		utils.HandleError(ctx, nil, "Title and content cannot be empty", http.StatusBadRequest)
+		return
+	}
+
+	// Sanitize input to prevent XSS
+	p := bluemonday.StrictPolicy()
+	announcement.Title = p.Sanitize(announcement.Title)
+	announcement.Content = p.Sanitize(announcement.Content)
+
+	// Get the current date
+	currentDate := time.Now().Format("2006-01-02")
+
+	// Insert into database
+	err := db.DB.QueryRow(`
+		INSERT INTO announcement (title, content, date, author_id) 
+		VALUES ($1, $2, $3::DATE, $4) RETURNING id`,
+		announcement.Title, announcement.Content, currentDate, announcement.AuthorID).Scan(&announcement.ID)
+
+	if err != nil {
+		log.Println("Database Error:", err) // Logs full error for debugging
+
+		// Hide specific database error details from users
+		if strings.Contains(err.Error(), "foreign key") {
+			utils.HandleError(ctx, nil, "Invalid author", http.StatusConflict)
+			return
+		}
+		utils.HandleError(ctx, nil, "An error occurred", http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, gin.H{"message": "Announcement created successfully", "announcement_id": announcement.ID})
+}
+func HandleSpecifiedAnnouncementFetching(ctx *gin.Context) {
+	announcementID := ctx.Param("id")
+	if _, err := strconv.Atoi(announcementID); err != nil {
+		utils.HandleError(ctx, nil, "Invalid announcement ID", http.StatusBadRequest)
+		return
+	}
+
+	var announcement handlers.Announcement
+	err := db.DB.Get(&announcement, "SELECT * FROM announcement WHERE id = $1", announcementID)
+	if err != nil {
+		log.Println("Database Error:", err) // Logs full error for debugging
+		utils.HandleError(ctx, nil, "An error occurred", http.StatusInternalServerError)
+		return
+	}
+
+	// Sanitize announcement data to prevent XSS
+	p := bluemonday.StrictPolicy()
+	announcement.Title = p.Sanitize(announcement.Title)
+	announcement.Content = p.Sanitize(announcement.Content)
+
+
+	ctx.JSON(http.StatusOK, gin.H{"data": announcement})
+}
+func HandleFetchAccordingToAuthorID(ctx *gin.Context) {
+	var requestedBody struct {
+		AuthorID int `json:"author_id"`
+	}
+
+	err := ctx.ShouldBindJSON(&requestedBody)
+	if err != nil {
+		log.Println("Binding Error:", err) // Logs full error for debugging
+		utils.HandleError(ctx, nil, "An error occurred", http.StatusInternalServerError)
+		return
+	}
+
+	var announcement []handlers.Announcement
+	err = db.DB.Select(&announcement, "SELECT * FROM announcement WHERE author_id = $1", 
+	requestedBody.AuthorID)
+	if err != nil {
+		log.Println("Database Error:", err) // Logs full error for debugging
+		utils.HandleError(ctx, nil, "An error occurred", http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"data": announcement})
+}
+func HandleAnnouncementDeletion(ctx *gin.Context) {
+	announcementID := ctx.Param("id")
+
+	// Delete from database
+	result, err := db.DB.Exec("DELETE FROM announcement WHERE id = $1", announcementID)
+	if err != nil {
+		log.Println("Database Error:", err) // Logs full error for debugging
+		utils.HandleError(ctx, nil, "An error occurred", http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		utils.HandleError(ctx, nil, "Announcement not found", http.StatusNotFound)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Announcement deleted successfully"})
+}
