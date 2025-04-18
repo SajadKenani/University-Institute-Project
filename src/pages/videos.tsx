@@ -1,0 +1,965 @@
+import { useCallback, useEffect, useState, useRef } from "react";
+import { DELETE, GET, getToken, POST } from "../components/Requests";
+import { HandleLogin } from "../components/Auth";
+import { AlertCircle, CheckCircle, Fullscreen, Image, Pause, Play, ScreenShareOff, Upload, Video, X } from "lucide-react";
+
+interface VideoItem {
+  id: number;
+  title: string;
+  url: string;
+  compressed_url: string;
+  description?: string;
+  thumbnail_url?: string;
+  thumbnail?: string;
+  author_id: number;
+  create_at: string;
+}
+
+interface Lecture {
+  id: number;
+  name: string;
+}
+
+// Define base API URL to avoid hardcoding
+const API_BASE_URL = import.meta.env.VITE_SERVER_URL;
+
+export const VIDEOS = () => {
+  // File handling states
+  const [file, setFile] = useState<File | null>(null);
+  const [thumbnail, setThumbnail] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+
+  // Form states
+  const [videoTitle, setVideoTitle] = useState<string>("");
+  const [videoDesc, setVideoDesc] = useState<string>("");
+  const [selectedLecture, setSelectedLecture] = useState<number | null>(null);
+
+  // UI states
+  const [activeTab, setActiveTab] = useState<"upload" | "library">("upload");
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Video playback states
+  const [streamedVideo, setStreamedVideo] = useState<string>("");
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Refs
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const progressBarRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Data states
+  const [allVideos, setAllVideos] = useState<VideoItem[]>([]);
+  const [selectedVideo, setSelectedVideo] = useState<VideoItem | null>(null);
+  const [lectures, setLectures] = useState<Lecture[]>([]);
+
+  const [videoQuality, setVideoQuality] = useState<"high" | "low">("high");
+
+  const [showControls, setShowControls] = useState(true);
+  const controlTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Helper function to construct full URL paths
+  const getFullPath = (path: string) => {
+    if (!path) return "";
+    return path.startsWith("http") ? path : `${API_BASE_URL}/${path}`;
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const selectedFile = event.target.files[0];
+
+      // Validate file type
+      const validVideoTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
+      if (!validVideoTypes.includes(selectedFile.type)) {
+        setError("Please select a valid video format (MP4, WebM, MOV)");
+        return;
+      }
+
+      setFile(selectedFile);
+
+      // Set default title from filename (without extension)
+      const fileName = selectedFile.name.split('.').slice(0, -1).join('.');
+      setVideoTitle(fileName);
+
+      setError(null);
+      setSuccess(false);
+    }
+  };
+
+  const handleThumbnailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const selectedThumbnail = event.target.files[0];
+
+      // Validate thumbnail format
+      const validImageTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+      if (!validImageTypes.includes(selectedThumbnail.type)) {
+        setError("Please select a valid image format (JPEG, PNG, WEBP)");
+        return;
+      }
+
+      setThumbnail(selectedThumbnail);
+
+      // Create preview URL for the thumbnail
+      const thumbnailURL = URL.createObjectURL(selectedThumbnail);
+      setThumbnailPreview(thumbnailURL);
+
+      setError(null);
+    }
+  };
+
+  const resetForm = () => {
+    setFile(null);
+    setVideoTitle("");
+    setVideoDesc("");
+    setThumbnail(null);
+    setThumbnailPreview(null);
+    setSelectedLecture(null);
+
+    // Reset file inputs
+    const fileInputs = document.querySelectorAll('input[type="file"]') as NodeListOf<HTMLInputElement>;
+    fileInputs.forEach(input => {
+      input.value = "";
+    });
+  };
+
+  const handleUpload = useCallback(async () => {
+    if (!file) {
+      setError("Please select a video file first");
+      return;
+    }
+
+    if (!videoTitle.trim()) {
+      setError("Please provide a title for your video");
+      return;
+    }
+
+    if (selectedLecture === null) {
+      setError("Please select a lecture");
+      return;
+    }
+
+    setUploading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      let authToken = await getToken();
+
+      if (!authToken) {
+        console.log("No token found, attempting login...");
+        await HandleLogin();
+        authToken = await getToken();
+
+        if (!authToken) {
+          throw new Error("Unable to retrieve token after login.");
+        }
+      }
+
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${authToken}`,
+      };
+
+      const formData = new FormData();
+      formData.append("video", file);
+      formData.append("title", videoTitle);
+      formData.append("desc", videoDesc);
+      formData.append("lecture_id", String(selectedLecture));
+
+      // Get author ID from localStorage
+      const userId = localStorage.getItem("userId");
+      if (!userId) {
+        throw new Error("User ID not found. Please log in again.");
+      }
+
+      formData.append("author_id", userId);
+
+      // Add thumbnail if available
+      if (thumbnail) {
+        formData.append("thumbnail", thumbnail);
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/upload-video`, {
+        method: "POST",
+        body: formData,
+        headers: headers,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || `Server responded with status: ${response.status}`);
+      }
+
+      const responseData = await response.json();
+      console.log("Upload successful:", responseData);
+
+      setSuccess(true);
+      resetForm();
+
+      // Refresh the video list
+      handleVideosFetching();
+
+      // Switch to library tab after successful upload
+      setTimeout(() => {
+        setActiveTab("library");
+      }, 2000);
+
+    } catch (error) {
+      console.error("Upload failed:", error);
+      setError(`Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setUploading(false);
+    }
+  }, [file, thumbnail, videoTitle, videoDesc, selectedLecture]);
+
+  const fetchVideoStream = useCallback(async (video: VideoItem) => {
+    if (!video) return;
+
+    setIsLoading(true);
+
+    try {
+      let authToken = await getToken();
+
+      if (!authToken) {
+        console.log("No token found, attempting login...");
+        await HandleLogin();
+        authToken = await getToken();
+
+        if (!authToken) {
+          throw new Error("Unable to retrieve token after login.");
+        }
+      }
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      };
+
+      // Use the appropriate URL based on quality setting
+      const videoUrl = videoQuality === "high" ? video.url : video.compressed_url;
+
+      if (!videoUrl) {
+        throw new Error("Video URL is not available");
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/stream-video/${videoUrl}`, {
+        headers
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch video stream: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.url) {
+        setStreamedVideo(data.url);
+        setIsPlaying(true);
+      } else {
+        throw new Error("No video URL returned from server");
+      }
+    } catch (error) {
+      console.error("Error fetching video stream:", error);
+      setError(`Failed to load video stream: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [videoQuality]);
+
+  const handleVideosFetching = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const userId = localStorage.getItem("userId");
+      if (!userId) {
+        throw new Error("User ID not found. Please log in again.");
+      }
+
+      const response = await POST("api/fetch-videos", { author_id: Number(userId) });
+
+      if (response?.videos && Array.isArray(response.videos)) {
+        setAllVideos(response.videos);
+
+        // If we have videos and none is selected yet, select the first one
+        if (response.videos.length > 0 && !selectedVideo) {
+          setSelectedVideo(response.videos[0]);
+          fetchVideoStream(response.videos[0]);
+        }
+      } else {
+        console.warn("Invalid response format for videos:", response);
+        setAllVideos([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch videos:", error);
+      setError(`Failed to load videos: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchVideoStream, selectedVideo]);
+
+  const handleLecturesFetching = useCallback(async () => {
+    try {
+      const response = await GET("api/fetch-all-lectures");
+      if (response?.data && Array.isArray(response.data)) {
+        setLectures(response.data);
+      } else {
+        console.warn("Invalid response format for lectures:", response);
+        setLectures([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch lectures:", error);
+      setError(`Failed to load lectures: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+  }, []);
+
+  const handleVideoRemoving = async (videoID: number) => {
+    if (!window.confirm("Are you sure you want to delete this video? This action cannot be undone.")) {
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await DELETE(`api/delete-video/${videoID}`);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || `Failed to delete video: ${response.status}`);
+      }
+
+      // Refresh the video list after deletion
+      await handleVideosFetching();
+      setSuccess(true);
+    } catch (error) {
+      console.error("Failed to delete video:", error);
+      setError(`Failed to delete video: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    handleVideosFetching();
+    handleLecturesFetching();
+
+    // Cleanup function to revoke object URLs when component unmounts
+    return () => {
+      if (thumbnailPreview) {
+        URL.revokeObjectURL(thumbnailPreview);
+      }
+    };
+  }, [handleVideosFetching, handleLecturesFetching]);
+
+  // Apply video quality changes
+  useEffect(() => {
+    if (selectedVideo) {
+      fetchVideoStream(selectedVideo);
+    }
+  }, [videoQuality, fetchVideoStream, selectedVideo]);
+
+  // Listen for fullscreen change
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = () => {
+      setShowControls(true);
+  
+      if (controlTimeoutRef.current) clearTimeout(controlTimeoutRef.current);
+  
+      controlTimeoutRef.current = setTimeout(() => {
+        setShowControls(false);
+      }, 3000); // hide after 3 seconds of inactivity
+    };
+  
+    const videoContainer = videoRef.current?.parentElement;
+  
+    videoContainer?.addEventListener("mousemove", handleMouseMove);
+  
+    return () => {
+      videoContainer?.removeEventListener("mousemove", handleMouseMove);
+      if (controlTimeoutRef.current) clearTimeout(controlTimeoutRef.current);
+    };
+  }, []);
+
+  // Toggle play state
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  // Toggle fullscreen mode
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      // Enter fullscreen
+      if (containerRef.current?.requestFullscreen) {
+        containerRef.current.requestFullscreen()
+          .then(() => setIsFullscreen(true))
+          .catch(err => console.error('Failed to enter fullscreen:', err));
+      }
+    } else {
+      // Exit fullscreen
+      document.exitFullscreen()
+        .then(() => setIsFullscreen(false))
+        .catch(err => console.error('Failed to exit fullscreen:', err));
+    }
+  };
+
+  // Update current time as video plays
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+    }
+  };
+
+  // Get video duration when metadata is loaded
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+    }
+  };
+
+  // Handle seeking when clicking on progress bar
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (progressBarRef.current && videoRef.current) {
+      const rect = progressBarRef.current.getBoundingClientRect();
+      const pos = (e.clientX - rect.left) / rect.width;
+      videoRef.current.currentTime = pos * duration;
+    }
+  };
+
+  // Format time from seconds to MM:SS
+  const formatTime = (time: number) => {
+    if (isNaN(time)) return "00:00";
+
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const handleVideoSelect = (video: VideoItem) => {
+    setSelectedVideo(video);
+    fetchVideoStream(video);
+
+    // Scroll to top when selecting a new video
+    window.scrollTo(0, 0);
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString('ar-IQ', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (e) {
+      return "Invalid date";
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    try {
+      // Strip milliseconds, ensure T, and remove any timezone offset if not UTC
+      let isoString = dateString.trim().replace(' ', 'T');
+
+      // If it doesn't already end in Z or timezone, add Z to make it UTC
+      if (!/[zZ]|[+-]\d{2}:?\d{2}$/.test(isoString)) {
+        isoString += 'Z';
+      }
+
+      const date = new Date(isoString);
+      const now = new Date();
+
+      const diffSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+      if (isNaN(diffSeconds)) return "Invalid date";
+      if (diffSeconds < 0) return "Just now";
+
+      if (diffSeconds < 60) return `${diffSeconds} seconds ago`;
+      if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)} minutes ago`;
+      if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)} hours ago`;
+      if (diffSeconds < 2592000) return `${Math.floor(diffSeconds / 86400)} days ago`;
+      if (diffSeconds < 31536000) return `${Math.floor(diffSeconds / 2592000)} months ago`;
+      return `${Math.floor(diffSeconds / 31536000)} years ago`;
+    } catch (e) {
+      return "Unknown time";
+    }
+  };
+
+  // Error message display component
+  const ErrorMessage = ({ message }: { message: string }) => (
+    <div className="mx-6 mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-start" role="alert">
+      <AlertCircle className="h-5 w-5 text-red-400 mt-0.5 mr-2" />
+      <div className="text-sm text-red-700">{message}</div>
+    </div>
+  );
+
+  // Success message display component
+  const SuccessMessage = ({ message }: { message: string }) => (
+    <div className="mx-6 mb-4 p-3 bg-green-50 border border-green-200 rounded-md flex items-start" role="alert">
+      <CheckCircle className="h-5 w-5 text-green-400 mt-0.5 mr-2" />
+      <div className="text-sm text-green-700">{message}</div>
+    </div>
+  );
+
+  return (
+    <div className="max-w-full mx-auto bg-white shadow-lg overflow-hidden">
+      {/* Header */}
+      <div className="bg-white px-6 py-3 border-b border-gray-200 flex justify-between items-center sticky top-0 z-10">
+        <div className="flex items-center">
+          <Video className="text-blue-600 mr-2" size={24} />
+        </div>
+        <div>
+          <button
+            onClick={() => setActiveTab(activeTab === "upload" ? "library" : "upload")}
+            className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            {activeTab === "library" ? (
+              <>
+                <Upload size={16} className="mr-2" />
+                تحميل
+              </>
+            ) : (
+              <>
+                <Video size={16} className="mr-2" />
+                المكتبة
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+  
+      {/* Main content area */}
+      <div className="flex">
+        {/* Sidebar */}
+        <div className="w-64 p-4 border-r border-gray-200 h-screen sticky top-16">
+          <nav className="space-y-1">
+            <button
+              onClick={() => setActiveTab("library")}
+              className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
+              <Video size={20} className="mr-3" />
+              الرئيسية
+            </button>
+            <button
+              onClick={() => setActiveTab("upload")}
+              className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
+              <Upload size={20} className="mr-3" />
+              تحميل فيديو
+            </button>
+  
+            {lectures.length > 0 && (
+              <div className="mt-8">
+                <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  المحاضرات
+                </h3>
+                <div className="space-y-1">
+                  {lectures.map(lecture => (
+                    <button
+                      key={lecture.id}
+                      className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100"
+                    >
+                      <span className="truncate">{lecture.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </nav>
+        </div>
+  
+        {/* Main content */}
+        <div className="flex-1 p-6">
+          {activeTab === "upload" ? (
+            <div className="mx-auto">
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="flex flex-col md:flex-row">
+                  {/* File drop area */}
+                  <div className="md:w-1/2 p-6 border-r border-gray-200">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-xl font-semibold text-gray-800">تحميل فيديو جديد</h3>
+                    </div>
+                    <div
+                      className={`border-2 border-dashed rounded-lg ${file ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+                        } transition-colors duration-200 ease-in-out py-8 px-4 text-center`}
+                    >
+                      <input
+                        type="file"
+                        id="video-file"
+                        accept="video/mp4,video/webm,video/quicktime"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        aria-label="تحميل ملف فيديو"
+                      />
+  
+                      {file ? (
+                        <div>
+                          <div className="flex items-center justify-center mb-4">
+                            <Video className="h-12 w-12 text-blue-500" />
+                          </div>
+                          <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {(file.size / (1024 * 1024)).toFixed(2)} ميجابايت · {file.type.split('/')[1].toUpperCase()}
+                          </p>
+                          <button
+                            onClick={() => {
+                              setFile(null);
+                              setVideoTitle("");
+  
+                              // Reset the file input
+                              const fileInput = document.getElementById('video-file') as HTMLInputElement;
+                              if (fileInput) fileInput.value = "";
+                            }}
+                            className="mt-4 inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            aria-label="إزالة الملف"
+                          >
+                            <X size={14} className="mr-1" />
+                            إزالة
+                          </button>
+                        </div>
+                      ) : (
+                        <label htmlFor="video-file" className="cursor-pointer">
+                          <div className="flex items-center justify-center mb-4">
+                            <Upload className="h-12 w-12 text-gray-400" />
+                          </div>
+                          <p className="text-sm font-medium text-gray-900">
+                            اسحب وأفلت أو انقر للتحميل
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            MP4, WebM أو MOV
+                          </p>
+                        </label>
+                      )}
+                    </div>
+                  </div>
+  
+                  {/* Form fields */}
+                  <div className="md:w-1/2 p-6 space-y-4">
+                    <div>
+                      <label htmlFor="video-title" className="block text-sm font-medium text-gray-700">
+                        عنوان الفيديو <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="video-title"
+                        value={videoTitle}
+                        onChange={(e) => setVideoTitle(e.target.value)}
+                        placeholder="أدخل عنوانًا وصفيًا"
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        disabled={uploading}
+                        required
+                      />
+                    </div>
+  
+                    <div>
+                      <label htmlFor="video-desc" className="block text-sm font-medium text-gray-700">
+                        الوصف
+                      </label>
+                      <textarea
+                        id="video-desc"
+                        value={videoDesc}
+                        onChange={(e) => setVideoDesc(e.target.value)}
+                        placeholder="قدم تفاصيل حول الفيديو الخاص بك"
+                        rows={4}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        disabled={uploading}
+                      />
+                    </div>
+  
+                    <div>
+                      <label htmlFor="lecture-select" className="block text-sm font-medium text-gray-700">
+                        اختر المحاضرة <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        id="lecture-select"
+                        value={selectedLecture || ""}
+                        onChange={(e) => setSelectedLecture(e.target.value ? Number(e.target.value) : null)}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        disabled={uploading}
+                        required
+                      >
+                        <option value="">اختر محاضرة</option>
+                        {lectures.map((lecture) => (
+                          <option key={lecture.id} value={lecture.id}>
+                            {lecture.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+  
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        الصورة المصغرة
+                      </label>
+                      <div className="mt-1 flex items-center">
+                      <div className="mr-4 flex-1">
+                          <input
+                            type="file"
+                            id="thumbnail-file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={handleThumbnailChange}
+                            className="hidden"
+                            disabled={uploading}
+                            aria-label="تحميل صورة مصغرة"
+                          />
+                          <label
+                            htmlFor="thumbnail-file"
+                            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none cursor-pointer"
+                          >
+                            <Upload size={16} className="ml-2" />
+                            {thumbnailPreview ? "تغيير الصورة المصغرة" : "تحميل صورة مصغرة"}
+                          </label>
+                          <p className="mt-1 text-xs text-gray-500">
+                            JPEG, PNG أو WebP (الحد الأقصى 5 ميجابايت)
+                          </p>
+                        </div>
+                        <div className="flex-shrink-0 h-16 w-24 bg-gray-100 rounded-md overflow-hidden">
+                          {thumbnailPreview ? (
+                            <img
+                              src={thumbnailPreview}
+                              alt="معاينة الصورة المصغرة"
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center">
+                              <Image className="h-8 w-8 text-gray-300" />
+                            </div>
+                          )}
+                        </div>
+                      
+                      </div>
+                    </div>
+                  </div>
+                </div>
+  
+                {/* Actions section */}
+                <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                  <div className="text-xs text-gray-500">
+                    <span className="font-medium">ملاحظة:</span> سيتم معالجة الملفات وتحسينها بعد التحميل
+                  </div>
+                  <button
+                    onClick={handleUpload}
+                    disabled={!file || uploading || !videoTitle.trim() || !selectedLecture}
+                    className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm ${!file || uploading || !videoTitle.trim() || !selectedLecture
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      }`}
+                    aria-busy={uploading}
+                  >
+                    {uploading ? (
+                      <>
+                        <svg className="animate-spin ml-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        جاري التحميل...
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={16} className="ml-2" />
+                        تحميل الفيديو
+                      </>
+                    )}
+                  </button>
+                </div>
+  
+                {/* Success/Error notifications */}
+                {error && <ErrorMessage message={error} />}
+                {success && <SuccessMessage message="تم تحميل الفيديو بنجاح! سيكون متاحًا في مكتبتك قريبًا." />}
+              </div>
+            </div>
+          ) : (
+            <div>
+              {isLoading && !selectedVideo ? (
+                <div className="flex items-center justify-center h-64" role="status">
+                  <svg className="animate-spin h-10 w-10 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span className="sr-only">جاري التحميل...</span>
+                </div>
+              ) : allVideos.length === 0 ? (
+                <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
+                  <Video className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">لا توجد فيديوهات حتى الآن</h3>
+                  <p className="mt-1 text-sm text-gray-500">ابدأ بتحميل أول فيديو لك.</p>
+                  <div className="mt-6">
+                    <button
+                      onClick={() => setActiveTab("upload")}
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      <Upload size={16} className="ml-2" />
+                      تحميل فيديو
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  {/* Video Player */}
+                  {selectedVideo && (
+                    <div ref={containerRef} className="relative mb-8 bg-black rounded-lg overflow-hidden">
+                      {isLoading ? (
+                        <div className="flex items-center justify-center h-[400px]" role="status">
+                          <svg className="animate-spin h-10 w-10 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span className="sr-only">جار تحميل الفيديو...</span>
+                        </div>
+                      ) : (
+                        <div className="relative w-full">
+                        <video
+                          ref={videoRef}
+                          src={streamedVideo}
+                          className="w-full h-auto"
+                          playsInline
+                          onClick={togglePlay}
+                          onTimeUpdate={handleTimeUpdate}
+                          onLoadedMetadata={handleLoadedMetadata}
+                          autoPlay
+                        />
+                      
+                        {/* Top Controls */}
+                        {showControls && (
+                          <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/70 to-transparent p-4 z-10 transition-opacity duration-300">
+                            <div className="flex justify-between items-center">
+                              <h3 className="text-white font-medium truncate">
+                                {selectedVideo.title}
+                              </h3>
+                              <select
+                                value={videoQuality}
+                                onChange={(e) => setVideoQuality(e.target.value as "high" | "low")}
+                                className="text-xs bg-transparent text-white border border-gray-500 rounded px-2 py-1"
+                              >
+                                <option value="high" className="text-black">جودة عالية</option>
+                                <option value="low" className="text-black">جودة منخفضة</option>
+                              </select>
+                            </div>
+                          </div>
+                        )}
+                      
+                        {/* Bottom Controls */}
+                        {showControls && (
+                          <div className="absolute bottom-0 left-0 right-0 p-4 z-20 flex items-center bg-gradient-to-t from-black/70 to-transparent transition-opacity duration-300">
+                            <button onClick={togglePlay} className="text-white mr-3">
+                              {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                            </button>
+                      
+                            <span className="text-xs text-white mr-2">{formatTime(currentTime)}</span>
+                      
+                            <div
+                              ref={progressBarRef}
+                              className="relative flex-1 h-1.5 bg-gray-600 rounded-full mx-2 cursor-pointer"
+                              onClick={handleSeek}
+                            >
+                              <div
+                                className="absolute top-0 left-0 h-full bg-blue-500 rounded-full"
+                                style={{ width: `${(currentTime / duration) * 100}%` }}
+                              />
+                            </div>
+                      
+                            <span className="text-xs text-white ml-2">{formatTime(duration)}</span>
+                      
+                            <button onClick={toggleFullscreen} className="text-white ml-3">
+                              {isFullscreen === true ? <ScreenShareOff size={18} /> : <Fullscreen size={18} />}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      
+                      )}
+                    </div>
+                  )}
+  
+                  {/* Video Details */}
+                  {selectedVideo && (
+                    <div className="mb-8">
+                      <h2 className="text-xl font-semibold text-gray-900 mb-2">{selectedVideo.title}</h2>
+                      <div className="flex items-center text-sm text-gray-500 mb-4">
+                        <span>{formatTimeAgo(selectedVideo.create_at)}</span>
+                        <span className="mx-2">•</span>
+                        <span>تم التحميل في {formatDate(selectedVideo.create_at)}</span>
+                      </div>
+                      {selectedVideo.description && (
+                        <p className="text-gray-700 whitespace-pre-line">
+                          {selectedVideo.description}
+                        </p>
+                      )}
+                    </div>
+                  )}
+  
+                  {/* Video Library */}
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">الفيديوهات الخاصة بك</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {allVideos.map((video) => (
+                        <div
+                          key={video.id}
+                          onClick={() => handleVideoSelect(video)}
+                          className={`border rounded-lg overflow-hidden cursor-pointer transition-all duration-200 ${selectedVideo?.id === video.id ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:shadow-md'
+                            }`}
+                        >
+                          <div className="relative pb-[56.25%] bg-gray-100">
+                            {video.thumbnail ? (
+                              <> 
+                                <button 
+                                  className="cursor-pointer z-10 absolute top-2 left-2 bg-red-500 text-white text-xs font-semibold p-1 rounded-lg" 
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // منع تشغيل onClick الخاص بالأب
+                                    handleVideoRemoving(video.id);
+                                  }}
+                                >
+                                  <X />
+                                </button>
+                                <img
+                                  src={getFullPath(video.thumbnail)}
+                                  alt={video.title}
+                                  className="absolute top-0 left-0 w-full h-full object-cover"
+                                />
+                              </>
+                            ) : (
+                              <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+                                <Video className="h-10 w-10 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="p-3">
+                            <h4 className="font-medium text-gray-900 truncate mb-1">{video.title}</h4>
+                            <p className="text-xs text-gray-500">{formatTimeAgo(video.create_at)}</p>
+                           
+                          </div>
+                         
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
