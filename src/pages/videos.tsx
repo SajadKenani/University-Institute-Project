@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { DELETE, GET, getToken, POST } from "../components/Requests";
 import { HandleLogin } from "../components/Auth";
-import { AlertCircle, CheckCircle, Fullscreen, Image, Pause, Play, ScreenShareOff, Upload, Video, X } from "lucide-react";
+import { AlertCircle, CheckCircle, Fullscreen, Image, Pause, Play, ScreenShareOff, Upload, Video, Volume2, VolumeX, X } from "lucide-react";
 
 interface VideoItem {
   id: number;
@@ -59,6 +59,9 @@ export const VIDEOS = () => {
   const [lectures, setLectures] = useState<Lecture[]>([]);
 
   const [videoQuality, setVideoQuality] = useState<"high" | "low">("high");
+
+  const [volume, setVolume] = useState<number>(1);
+  const [isMuted, setIsMuted] = useState<boolean>(false);
 
   const [showControls, setShowControls] = useState(true);
   const controlTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -151,7 +154,6 @@ export const VIDEOS = () => {
       let authToken = await getToken();
 
       if (!authToken) {
-        console.log("No token found, attempting login...");
         await HandleLogin();
         authToken = await getToken();
 
@@ -194,8 +196,7 @@ export const VIDEOS = () => {
         throw new Error(errorData?.message || `Server responded with status: ${response.status}`);
       }
 
-      const responseData = await response.json();
-      console.log("Upload successful:", responseData);
+      await response.json();
 
       setSuccess(true);
       resetForm();
@@ -225,7 +226,6 @@ export const VIDEOS = () => {
       let authToken = await getToken();
 
       if (!authToken) {
-        console.log("No token found, attempting login...");
         await HandleLogin();
         authToken = await getToken();
 
@@ -258,6 +258,7 @@ export const VIDEOS = () => {
 
       if (data.url) {
         setStreamedVideo(data.url);
+        console.log(data.url)
         setIsPlaying(true);
       } else {
         throw new Error("No video URL returned from server");
@@ -339,10 +340,36 @@ export const VIDEOS = () => {
       console.error("Failed to delete video:", error);
       setError(`Failed to delete video: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
+      handleVideosFetching();
       setIsLoading(false);
     }
   };
 
+  const handleVolumeChange = (e: any) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+    if (videoRef.current) {
+      videoRef.current.volume = newVolume;
+    }
+    setIsMuted(newVolume === 0);
+  };
+  
+  const toggleMute = () => {
+    const isNowMuted = !isMuted;
+    setIsMuted(isNowMuted);
+    if (videoRef.current) {
+    videoRef.current.muted = isNowMuted;
+    }
+  };
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.volume = volume;
+      videoRef.current.muted = isMuted;
+    }
+  }, [volume, isMuted]);
+
+  
   useEffect(() => {
     handleVideosFetching();
     handleLecturesFetching();
@@ -497,11 +524,11 @@ export const VIDEOS = () => {
       if (diffSeconds < 0) return "Just now";
 
       if (diffSeconds < 60) return `${diffSeconds} seconds ago`;
-      if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)} minutes ago`;
-      if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)} hours ago`;
-      if (diffSeconds < 2592000) return `${Math.floor(diffSeconds / 86400)} days ago`;
-      if (diffSeconds < 31536000) return `${Math.floor(diffSeconds / 2592000)} months ago`;
-      return `${Math.floor(diffSeconds / 31536000)} years ago`;
+      if (diffSeconds < 3600) return `  قبل ${Math.floor(diffSeconds / 60)} دقيقة `;
+      if (diffSeconds < 86400) return ` قبل ${Math.floor(diffSeconds / 3600)} ساعة `;
+      if (diffSeconds < 2592000) return ` قبل ${Math.floor(diffSeconds / 86400)} يوم`;
+      if (diffSeconds < 31536000) return ` قبل ${Math.floor(diffSeconds / 2592000)} شهر`;
+      return `${Math.floor(diffSeconds / 31536000)} سنة `;
     } catch (e) {
       return "Unknown time";
     }
@@ -537,12 +564,12 @@ export const VIDEOS = () => {
           >
             {activeTab === "library" ? (
               <>
-                <Upload size={16} className="mr-2" />
+                <Upload size={16} className="ml-2" />
                 تحميل
               </>
             ) : (
               <>
-                <Video size={16} className="mr-2" />
+                <Video size={16} className="ml-2" />
                 المكتبة
               </>
             )}
@@ -551,24 +578,24 @@ export const VIDEOS = () => {
       </div>
   
       {/* Main content area */}
-      <div className="flex">
+      <div className="">
         {/* Sidebar */}
-        <div className="w-64 p-4 border-r border-gray-200 h-screen sticky top-16">
-          <nav className="space-y-1">
+        <div className="w-64 p-4 border-r border-gray-200 sticky top-16">
+          <nav className=" w-64 flex justify-center flex-row">
             <button
               onClick={() => setActiveTab("library")}
               className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
-              <Video size={20} className="mr-3" />
+              <Video size={20} className="ml-3" />
               الرئيسية
             </button>
             <button
               onClick={() => setActiveTab("upload")}
               className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
-              <Upload size={20} className="mr-3" />
+              <Upload size={20} className="ml-3" />
               تحميل فيديو
             </button>
   
-            {lectures.length > 0 && (
+            {/* {lectures.length > 0 && (
               <div className="mt-8">
                 <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                   المحاضرات
@@ -584,7 +611,7 @@ export const VIDEOS = () => {
                   ))}
                 </div>
               </div>
-            )}
+            )} */}
           </nav>
         </div>
   
@@ -712,6 +739,20 @@ export const VIDEOS = () => {
                         الصورة المصغرة
                       </label>
                       <div className="mt-1 flex items-center">
+                      <div className="flex-shrink-0 h-16 w-24 bg-gray-100 rounded-md overflow-hidden">
+                          {thumbnailPreview ? (
+                            <img
+                              src={thumbnailPreview}
+                              alt="معاينة الصورة المصغرة"
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center">
+                              <Image className="h-8 w-8 text-gray-300" />
+                            </div>
+                          )}
+                        </div>
+                      
                       <div className="mr-4 flex-1">
                           <input
                             type="file"
@@ -732,19 +773,6 @@ export const VIDEOS = () => {
                           <p className="mt-1 text-xs text-gray-500">
                             JPEG, PNG أو WebP (الحد الأقصى 5 ميجابايت)
                           </p>
-                        </div>
-                        <div className="flex-shrink-0 h-16 w-24 bg-gray-100 rounded-md overflow-hidden">
-                          {thumbnailPreview ? (
-                            <img
-                              src={thumbnailPreview}
-                              alt="معاينة الصورة المصغرة"
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center">
-                              <Image className="h-8 w-8 text-gray-300" />
-                            </div>
-                          )}
                         </div>
                       
                       </div>
@@ -883,6 +911,23 @@ export const VIDEOS = () => {
                             <button onClick={toggleFullscreen} className="text-white ml-3">
                               {isFullscreen === true ? <ScreenShareOff size={18} /> : <Fullscreen size={18} />}
                             </button>
+
+                            <div className="flex items-center mx-3 group">
+                            <input
+                                type="range"
+                                min="0"
+                                max="1"
+                                step="0.01"
+                                value={volume}
+                                onChange={handleVolumeChange}
+                                className="w-20 h-1 cursor-pointer accent-blue-500 group-hover:block hidden"
+                                style={{ transform: "rotate(180deg)" }}
+                              />
+                              <button onClick={toggleMute} className="text-white mr-2">
+                                {isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                              </button>
+                           
+                            </div>
                           </div>
                         )}
                       </div>

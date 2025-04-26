@@ -163,7 +163,7 @@ export const ANNOUNCEMENTS: React.FC = () => {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-gray-800 flex items-center">
-            <Megaphone className="mr-3 text-blue-600" size={32} />
+            <Megaphone className="ml-3 text-blue-600" size={32} />
             الإعلانات
           </h1>
           <button
@@ -172,12 +172,12 @@ export const ANNOUNCEMENTS: React.FC = () => {
           >
             {isFormExpanded ? (
               <>
-                <X className="mr-2" size={20} />
+                <X className="ml-2" size={20} />
                 إلغاء
               </>
             ) : (
               <>
-                <Plus className="mr-2" size={20} />
+                <Plus className="ml-2" size={20} />
                 إعلان جديد
               </>
             )}
@@ -190,7 +190,7 @@ export const ANNOUNCEMENTS: React.FC = () => {
             className="flex items-center bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 transition-opacity animate-pulse"
             role="alert"
           >
-            <CheckCircle className="mr-2" size={20} />
+            <CheckCircle className="ml-2" size={20} />
             {success}
           </div>
         )}
@@ -216,9 +216,9 @@ export const ANNOUNCEMENTS: React.FC = () => {
       {/* Announcement Creation Form */}
       {isFormExpanded && (
         <div className="mb-8 p-6 bg-white shadow-lg rounded-lg border border-gray-200 transition-all duration-300 ease-in-out ">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center justify-end">
-            إنشاء إعلان جديد
+          <h2 className="text-xl font-semibold mb-4 text-gray-800 flex text-start items-center justify-start">
             <Plus className="ml-2 text-blue-500" size={24} />
+            إنشاء إعلان جديد
           </h2>
           
           {error && (
@@ -251,7 +251,7 @@ export const ANNOUNCEMENTS: React.FC = () => {
               <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1 text-right">المحتوى</label>
               <textarea
                 id="content"
-                placeholder="...أدخل تفاصيل الإعلان"
+                placeholder="أدخل تفاصيل الإعلان..."
                 value={newAnnouncement.content}
                 onChange={(e) =>
                   setNewAnnouncement((prev) => ({ ...prev, content: e.target.value }))
@@ -267,11 +267,12 @@ export const ANNOUNCEMENTS: React.FC = () => {
             <button
               onClick={handleAnnouncementInsertion}
               disabled={isLoading || !newAnnouncement.title.trim() || !newAnnouncement.content.trim()}
-              className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed flex items-center justify-center shadow-md transition-colors"
+              className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-blue-300 
+              disabled:cursor-not-allowed flex items-center justify-center shadow-md transition-colors"
             >
               {isLoading ? (
                 <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin -mr-1 ml-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
@@ -279,7 +280,7 @@ export const ANNOUNCEMENTS: React.FC = () => {
                 </span>
               ) : (
                 <>
-                  <CheckCircle className="mr-2" size={20} />
+                  <CheckCircle className="ml-2" size={20} />
                   نشر الإعلان
                 </>
               )}
@@ -345,12 +346,12 @@ export const ANNOUNCEMENTS: React.FC = () => {
              </div>
              
              <div className="flex items-center text-sm text-gray-500 pt-4 border-t border-gray-100">
-               <div className="flex items-center mr-4">
-                 <Calendar className="h-4 w-4 mr-1" />
+               <div className="flex items-center ml-4">
+                 <Calendar className="h-4 w-4 ml-1" />
                  {formatDate(announcement.date)}
                </div>
                <div className="flex items-center">
-                 <User className="h-4 w-4 mr-1" />
+                 <User className="h-4 w-4 ml-1" />
                   {announcement.author_name}
                </div>
              </div>
@@ -366,7 +367,7 @@ export const ANNOUNCEMENTS: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm transition-opacity">
           <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md animate-fadeIn">
             <div className="flex items-center mb-4 text-red-500">
-              <AlertCircle className="mr-3" size={24} />
+              <AlertCircle className="ml-3" size={24} />
               <h3 className="text-lg font-bold">تأكيد الحذف</h3>
             </div>
             <p className="text-gray-600 mb-6">
@@ -386,15 +387,17 @@ export const ANNOUNCEMENTS: React.FC = () => {
               >
                 {isLoading ? (
                   <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin -ml-1 ml-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" 
+                    fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <path className="opacity-75" fill="currentColor" 
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     جاري الحذف...
                   </span>
                 ) : (
                   <>
-                    <Trash2 className="mr-2" size={16} />
+                    <Trash2 className="ml-2" size={16} />
                     حذف
                   </>
                 )}
@@ -408,7 +411,8 @@ export const ANNOUNCEMENTS: React.FC = () => {
       <div className="md:hidden fixed bottom-6 right-6">
         <button
           onClick={() => setIsFormExpanded(!isFormExpanded)}
-          className={`p-4 ${isFormExpanded ? 'bg-gray-500' : 'bg-blue-500'} text-white rounded-full shadow-lg hover:${isFormExpanded ? 'bg-gray-600' : 'bg-blue-600'} transition-colors`}
+          className={`p-4 ${isFormExpanded ? 'bg-gray-500' : 'bg-blue-500'} text-white rounded-full shadow-lg hover:${isFormExpanded ? 
+            'bg-gray-600' : 'bg-blue-600'} transition-colors`}
         >
           {isFormExpanded ? <X size={24} /> : <Plus size={24} />}
         </button>

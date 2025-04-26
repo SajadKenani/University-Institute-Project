@@ -354,9 +354,8 @@ return (
                 {/* قسم تسجيل الحضور اليدوي */}
                 <div className="mt-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <h3 className="text-lg font-medium text-gray-800 mb-3">تسجيل حضور الطالب يدوياً</h3>
-                  
                   <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-reverse sm:space-x-3">
-                    <div className="flex-grow">
+                    <div className="flex-grow m-0">
                       <select
                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                         value={selectedStudentID ?? ""}
@@ -372,7 +371,7 @@ return (
                     </div>
                     
                     <button
-                      className={`px-4 py-2 rounded-md text-white font-medium 
+                      className={`px-4 py-2 rounded-md text-white font-medium mr-2
                         ${isSubmitting || !availableStudents.length || !selectedStudentID
                           ? 'bg-blue-400 cursor-not-allowed' 
                           : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
@@ -429,7 +428,7 @@ return (
                         <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                           الوقت
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                           الإجراءات
                         </th>
                       </tr>
@@ -463,8 +462,8 @@ return (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
                                 <>
-                                  <span>إزالة</span>
                                   <X className="h-4 w-4" />
+                                  <span>إزالة</span>
                                 </>
                               )}
                             </button>

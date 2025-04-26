@@ -174,7 +174,7 @@ export const SPECIFIEDSTUDENT: React.FC = () => {
         {/* قسم إدارة المواد */}
         <div className="bg-white shadow-lg rounded-lg p-6">
           <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center">
-            <BookOpen className="mr-2 text-blue-500" size={24} />
+            <BookOpen className="ml-2 text-blue-500" size={24} />
             إدارة المواد
           </h2>
   
@@ -256,8 +256,8 @@ export const SPECIFIEDSTUDENT: React.FC = () => {
         {/* قسم تسجيلات الفصول */}
         <div className="bg-white shadow-lg rounded-lg p-6">
           <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center">
-            <Calendar className="mr-2 text-blue-500" size={24} />
-            تسجيلات الفصول
+            <Calendar className="ml-2 text-blue-500" size={24} />
+            تسجيلات المحاضرات
           </h2>
   
           {isRegistrationsLoading ? (

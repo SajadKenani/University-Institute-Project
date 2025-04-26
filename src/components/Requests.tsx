@@ -26,7 +26,6 @@ const fetchFromApi = async (
     let authToken = await getToken();
 
     if (!authToken) {
-      console.log("No token found, attempting login...");
       await HandleLogin();
       authToken = await getToken();
 
@@ -57,8 +56,6 @@ const fetchFromApi = async (
       if (isRetry) {
         throw new Error("Authentication failed after retry attempt");
       }
-      
-      console.log("Token expired, attempting to refresh...");
       // Clear token and re-login
       localStorage.removeItem(TOKEN_KEY);
       await HandleLogin();
