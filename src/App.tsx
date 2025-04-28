@@ -12,22 +12,40 @@ import { POST } from './components/Requests';
 import { STUDENTS } from './pages/students';
 import { SPECIFIEDSTUDENT } from './pages/specifiedStudent';
 import { ANNOUNCEMENTS } from './pages/announcements';
-import { Menu, X } from 'lucide-react'; // استيراد أيقونات للقائمة المنسدلة
+import { Menu, X } from 'lucide-react'; // Importing icons for dropdown menu
 import { VIDEOS } from './pages/videos';
 import { SEASONS } from './pages/seasons';
 import { LECTURE } from './pages/lecture';
 import { SPECIFIEDLECTURE } from './pages/specifiedLecture';
-import "./index.css"
+import "./index.css";
 
-// تحديد أدوار المستخدمين وصلاحياتهم
+// Define types
+interface UserResponse {
+  data?: Array<{
+    role: string;
+    [key: string]: any;
+  }>;
+  token?: string;
+  value?: string | number;
+  [key: string]: any;
+}
+
+interface Credentials {
+  phone_number: string;
+  password: string;
+}
+
+// User roles definition
 const ROLES = {
   ADMIN: 'admin',
   TEACHER: 'teacher',
   ANNOUNCER: 'announcer'
-};
+} as const;
 
-// تحديد صلاحيات الوصول لكل مسار
-const ROUTE_PERMISSIONS = {
+type RoleType = typeof ROLES[keyof typeof ROLES];
+
+// Route access permissions
+const ROUTE_PERMISSIONS: Record<string, RoleType[]> = {
   '/accounts': [ROLES.ADMIN],
   '/students': [ROLES.ADMIN, ROLES.TEACHER],
   '/students/student': [ROLES.ADMIN, ROLES.TEACHER],
@@ -38,17 +56,22 @@ const ROUTE_PERMISSIONS = {
   '/seasons/lecture/specified': [ROLES.ADMIN, ROLES.TEACHER]
 };
 
-// مكون تخطيط التنقل
-const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// Layout component
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // حالة قائمة البرغر
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
   const handleLogout = () => {
     localStorage.removeItem('userId');
+    localStorage.removeItem('token');
     localStorage.removeItem('userRole');
     navigate('/');
   };
@@ -56,17 +79,21 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const handleAccountFetching = useCallback(async () => {
     try {
       const userId = localStorage.getItem("userId");
-      if (!userId) {
+      const token = localStorage.getItem("token");
+      
+      if (!userId || !token) {
         navigate('/');
         return;
       }
 
-      const response = await POST("api/handle-account-fetching", {
+      const response: UserResponse = await POST("api/handle-account-fetching", {
         id: Number(userId)
       });
       
       if (response?.data?.[0]?.role) {
         let role = response.data[0].role.toLowerCase();
+        
+        // Convert 'student' to 'announcer'
         if (role === 'student') {
           role = 'announcer';
         }
@@ -74,6 +101,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         setUserRole(role);
         localStorage.setItem('userRole', role);
         
+        // Check if user has permission for the current path
         if (!hasPermission(location.pathname, role)) {
           navigate('/announcements');
           setError("ليس لديك صلاحية للوصول إلى هذه الصفحة");
@@ -93,10 +121,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     handleAccountFetching();
   }, [handleAccountFetching]);
 
-  const hasPermission = (path: string, role: string) => {
+  const hasPermission = (path: string, role: string): boolean => {
     const basePath = path.split('?')[0];
-    const allowedRoles = ROUTE_PERMISSIONS[basePath as keyof typeof ROUTE_PERMISSIONS];
-    return allowedRoles ? allowedRoles.includes(role) : false;
+    const allowedRoles = ROUTE_PERMISSIONS[basePath];
+    return allowedRoles ? allowedRoles.includes(role as RoleType) : false;
   };
 
   if (loading) {
@@ -111,7 +139,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <div className="flex min-h-screen" dir="rtl">
-      {/* الشريط الجانبي للتنقل */}
+      {/* Sidebar navigation */}
       <div
         className={`fixed inset-y-0 right-0 bg-blue-700 text-white p-4 transform ${
           isSidebarOpen ? 'translate-x-0' : 'translate-x-full'
@@ -136,7 +164,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           {userRole === ROLES.ADMIN && (
             <Link 
               to="/accounts" 
-              className="block py-2 px-4 rounded hover:bg-blue-700 transition duration-300"
+              className="block py-2 px-4 rounded hover:bg-blue-600 transition duration-300"
             >
               الحسابات
             </Link>
@@ -144,7 +172,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           {userRole && hasPermission('/students', userRole) && (
             <Link 
               to="/students" 
-              className="block py-2 px-4 rounded hover:bg-blue-700 transition duration-300"
+              className="block py-2 px-4 rounded hover:bg-blue-600 transition duration-300"
             >
               الطلاب
             </Link>
@@ -152,23 +180,23 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           {userRole && hasPermission('/announcements', userRole) && (
             <Link 
               to="/announcements" 
-              className="block py-2 px-4 rounded hover:bg-blue-700 transition duration-300"
+              className="block py-2 px-4 rounded hover:bg-blue-600 transition duration-300"
             >
               الإعلانات
             </Link>
           )}
-            {userRole && hasPermission('/videos', userRole) && (
+          {userRole && hasPermission('/videos', userRole) && (
             <Link 
               to="/videos" 
-              className="block py-2 px-4 rounded hover:bg-blue-700 transition duration-300"
+              className="block py-2 px-4 rounded hover:bg-blue-600 transition duration-300"
             >
               الفيديوهات
             </Link>
           )}
-             {userRole && hasPermission('/seasons', userRole) && (
+          {userRole && hasPermission('/seasons', userRole) && (
             <Link 
               to="/seasons" 
-              className="block py-2 px-4 rounded hover:bg-blue-700 transition duration-300"
+              className="block py-2 px-4 rounded hover:bg-blue-600 transition duration-300"
             >
               الفصول الدراسية
             </Link>
@@ -182,7 +210,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </nav>
       </div>
 
-      {/* زر قائمة البرغر */}
+      {/* Hamburger menu button */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         className="fixed top-4 left-4 z-50 bg-blue-800 text-white p-2 rounded-lg lg:hidden"
@@ -191,8 +219,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <Menu size={24} />
       </button>
 
-      {/* منطقة المحتوى الرئيسية */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Main content area */}
+      <div className="flex-1 overflow-y-auto p-4">
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {error}
@@ -204,19 +232,20 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   );
 };
 
-// مكون تسجيل الدخول
-const SignIn = () => {
-  const [credentials, setCredentials] = useState({
+// SignIn component
+const SignIn: React.FC = () => {
+  const [credentials, setCredentials] = useState<Credentials>({
     phone_number: '',
     password: ''
   });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // مسح أي بيانات مستخدم مخزنة في صفحة تسجيل الدخول
+    // Clear user data on login page
     localStorage.removeItem('userId');
+    localStorage.removeItem('token');
     localStorage.removeItem('userRole');
   }, []);
 
@@ -233,31 +262,33 @@ const SignIn = () => {
     setError('');
     setLoading(true);
 
-    // التحقق من صحة رقم الهاتف
-    const phoneRegex = /^[0-9]{11}$/;
+    // Phone number validation
+    const phoneRegex = /^07[0-9]{9}$/;
     if (!phoneRegex.test(credentials.phone_number)) {
-      setError('الرجاء إدخال رقم هاتف صحيح مكون من 11 رقمًا');
+      setError('الرجاء إدخال رقم هاتف صحيح مكون من 11 رقمًا يبدأ بـ 07');
       setLoading(false);
       return;
     }
 
     try {
-      const response = await POST('api/sign-in', {
+      const response: UserResponse = await POST('api/sign-in', {
         phone_number: credentials.phone_number, 
         password: credentials.password
       });
     
       if (response && response.value) {
-        localStorage.setItem('userId', response.value);
+        localStorage.setItem('userId', String(response.value));
+        if (response.token) {
+          localStorage.setItem('token', response.token);
+        }
         
-        // الحصول على دور المستخدم مباشرة بعد تسجيل الدخول لتحديد المكان المراد التنقل إليه
+        // Get user role after login
         try {
-          const userResponse = await POST("api/handle-account-fetching", {
+          const userResponse: UserResponse = await POST("api/handle-account-fetching", {
             id: Number(response.value)
           });
           
           if (userResponse?.data?.[0]?.role) {
-            // تعيين 'student' إلى 'announcer' إذا جاء من الخادم الخلفي
             let role = userResponse.data[0].role.toLowerCase();
             if (role === 'student') {
               role = 'announcer';
@@ -265,18 +296,18 @@ const SignIn = () => {
             
             localStorage.setItem('userRole', role);
             
-            // التنقل بناءً على الدور
+            // Navigate based on role
             if (role === ROLES.ADMIN) {
-              navigate('/accounts'); // المسؤولون يذهبون إلى صفحة الحسابات
+              navigate('/accounts');
             } else {
-              navigate('/announcements'); // الأدوار الأخرى تذهب إلى الإعلانات
+              navigate('/announcements');
             }
           } else {
-            navigate('/announcements'); // الافتراضي إذا لم يتمكن من تحديد الدور
+            navigate('/announcements');
           }
         } catch (err) {
           console.error("فشل في جلب دور المستخدم:", err);
-          navigate('/announcements'); // الافتراضي في حالة وجود خطأ
+          navigate('/announcements');
         }
       } else {
         setError('رقم الهاتف أو كلمة المرور غير صحيحة');
@@ -295,6 +326,7 @@ const SignIn = () => {
         <h2 className="text-3xl font-bold text-center text-blue-800">
           تسجيل الدخول
         </h2>
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
@@ -306,14 +338,13 @@ const SignIn = () => {
               value={credentials.phone_number}
               onChange={handleInputChange}
               required
-              maxLength={11}
-              pattern="[0-9]{11}"
               className="w-full px-4 py-3 border border-blue-300 rounded-lg 
               focus:outline-none focus:ring-2 focus:ring-blue-500 
               transition duration-300 ease-in-out"
-              placeholder="أدخل رقم الهاتف (11 رقم)"
+              placeholder="أدخل رقم الهاتف (يبدأ بـ 07)"
             />
           </div>
+          
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
               كلمة المرور
@@ -324,18 +355,19 @@ const SignIn = () => {
               value={credentials.password}
               onChange={handleInputChange}
               required
-              minLength={8}
               className="w-full px-4 py-3 border border-blue-300 rounded-lg 
               focus:outline-none focus:ring-2 focus:ring-blue-500 
               transition duration-300 ease-in-out"
               placeholder="أدخل كلمة المرور"
             />
           </div>
+          
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
               {error}
             </div>
           )}
+          
           <button
             type="submit"
             disabled={loading}
@@ -355,30 +387,36 @@ const SignIn = () => {
   );
 };
 
-// مكون المسار المحمي المستند إلى الدور
-const ProtectedRoute: React.FC<{ children: React.ReactNode, requiredRoles?: string[] }> = ({ 
+// Protected Route component
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  requiredRoles?: string[];
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
   requiredRoles = [] 
 }) => {
   const isAuthenticated = !!localStorage.getItem('userId');
+  const isTokenExist = !!localStorage.getItem('token');
   const userRole = localStorage.getItem('userRole');
   const navigate = useNavigate();
   
   useEffect(() => {
-    // إذا كان المسار يتطلب أدوارًا محددة والمستخدم لا يملك الصلاحية
+    // Check if user has the required role
     if (requiredRoles.length > 0 && userRole && !requiredRoles.includes(userRole)) {
       navigate('/announcements');
     }
   }, [navigate, requiredRoles, userRole]);
   
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !isTokenExist) {
     return <Navigate to="/" replace />;
   }
   
   return <Layout>{children}</Layout>;
 };
 
-// تكوين جهاز التوجيه
+// Router configuration
 const router = createBrowserRouter([
   {
     path: '/',
@@ -411,7 +449,7 @@ const router = createBrowserRouter([
   {
     path: '/announcements',
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute requiredRoles={[ROLES.ADMIN, ROLES.TEACHER, ROLES.ANNOUNCER]}>
         <ANNOUNCEMENTS />
       </ProtectedRoute>
     ),
@@ -419,7 +457,7 @@ const router = createBrowserRouter([
   {
     path: '/videos',
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute requiredRoles={[ROLES.ADMIN]}>
         <VIDEOS />
       </ProtectedRoute>
     ),
@@ -427,7 +465,7 @@ const router = createBrowserRouter([
   {
     path: '/seasons',
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute requiredRoles={[ROLES.ADMIN, ROLES.TEACHER]}>
         <SEASONS />
       </ProtectedRoute>
     ),
@@ -435,7 +473,7 @@ const router = createBrowserRouter([
   {
     path: '/seasons/lecture',
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute requiredRoles={[ROLES.ADMIN, ROLES.TEACHER]}>
         <LECTURE />
       </ProtectedRoute>
     ),
@@ -443,11 +481,16 @@ const router = createBrowserRouter([
   {
     path: '/seasons/lecture/specified',
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute requiredRoles={[ROLES.ADMIN, ROLES.TEACHER]}>
         <SPECIFIEDLECTURE />
       </ProtectedRoute>
     ),
   },
+  // Catch all route
+  {
+    path: '*',
+    element: <Navigate to="/announcements" replace />
+  }
 ]);
 
 function App() {
