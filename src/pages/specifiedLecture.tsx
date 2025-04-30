@@ -244,7 +244,7 @@ const availableStudents = students.filter(student =>
 );
 
 return (
-  <div className="min-h-screen bg-gray-50 p-4 md:p-8" dir="rtl">
+  <div className="min-h-screen p-4 md:p-8" dir="rtl">
     <div className="max-w-4xl mx-auto">
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         {/* الترويسة */}

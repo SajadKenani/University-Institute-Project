@@ -102,7 +102,8 @@ export const SEASONS = () => {
         <h2 className="text-3xl font-bold text-gray-800">المواسم</h2>
         <button
           onClick={() => setShowForm(!showForm)}
-          className={`px-5 py-2 rounded-lg font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 ${showForm
+          className={`px-5 py-2 rounded-lg font-medium transition-all duration-300 focus:outline-none focus:ring-2 
+            focus:ring-offset-2 ${showForm
               ? "bg-gray-200 hover:bg-gray-300 text-gray-800 focus:ring-gray-400"
               : "bg-indigo-600 hover:bg-indigo-700 text-white focus:ring-indigo-500"
             }`}
