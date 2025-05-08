@@ -22,6 +22,7 @@ export const ACCOUNTS = () => {
     name: string;
     phone_number: string;
     role: string;
+    is_active: boolean;
   }
 
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -142,9 +143,26 @@ export const ACCOUNTS = () => {
     }
   }, [accountToDelete, handleAccountsFetching]);
 
+  const handleStatusChange = useCallback(async (myid: number) => {
+    console.log(myid);
+    setLoading(true);
+    try {
+      const response = await POST("api/update-status", { id: myid });
+      console.log(response);
+      if (response.status === 200) {
+        await handleAccountsFetching();
+      }
+    } catch (error) {
+      console.error("Failed to update status", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [handleAccountsFetching]);
+
   useEffect(() => {
     handleAccountsFetching();
   }, [handleAccountsFetching]);
+
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row gap-8 bg-blue-50 p-6 font-arabic" dir="rtl">
@@ -256,10 +274,12 @@ export const ACCOUNTS = () => {
                   <th className="p-3 text-right text-blue-700">الهاتف</th>
                   <th className="p-3 text-right text-blue-700">الدور</th>
                   <th className="p-3 text-right text-blue-700">الإجراءات</th>
+                  <th className="p-3 text-right text-blue-700">حاله التسجيل</th>
+                  
                 </tr>
               </thead>
               <tbody>
-                {accounts.map((account) => (
+                {accounts.sort((a, b) => a.id - b.id).map((account) => (
                   <tr
                     key={account.gen_id}
                     className="border-b border-blue-100 hover:bg-blue-50 transition duration-200"
@@ -283,6 +303,7 @@ export const ACCOUNTS = () => {
                          account.role === "Announcer" ? "معلن" : account.role}
                       </span>
                     </td>
+                    <td className="cursor-pointer" onClick={() => handleStatusChange(account.id)}>{account.is_active === true ? "مفعل" : "غير مفعل"}</td>
                     <td className="p-3">
                       <button
                         onClick={() => {

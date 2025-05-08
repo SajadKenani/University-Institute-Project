@@ -239,7 +239,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
           
           <div className="mb-6">
-            <div className="flex items-center space-x-2 mb-2 space-x-reverse">
+            <div className="flex items-center space-x-2 mb-2 ">
               <UserCircle size={24} className="text-blue-300" />
               <span className="font-semibold">{userName || "مستخدم"}</span>
             </div>
@@ -338,7 +338,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </button>
 
         {/* Main content area */}
-        <div className="flex-1 p-6 lg:p-8 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto">
           <ErrorMessage message={error} />
           {children}
         </div>
@@ -389,7 +389,7 @@ const SignIn: React.FC = () => {
     return false;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (async (e: React.FormEvent) => { 
     e.preventDefault();
   
     if (throttleSubmit()) return;
@@ -399,7 +399,7 @@ const SignIn: React.FC = () => {
   
     const phoneRegex = /^07\d{9}$/;
     const { phone_number, password } = credentials;
-  
+
     if (!phoneRegex.test(phone_number)) {
       setError('الرجاء إدخال رقم هاتف صحيح مكون من 11 رقمًا يبدأ بـ 07');
       setLoading(false);
@@ -441,8 +441,10 @@ const SignIn: React.FC = () => {
         const msg = err.message;
         console.log(msg)
 
-        if (msg.includes('limit_issue')) {
+        if (msg.includes('limit_issue_one_hour')) {
           setError('يجب أن تنتظر لمدة ساعة قبل أن تحاول مرة أخرى');
+        } else  if (msg.includes('limit_issue_five_hours')) {
+          setError('يجب أن تنتظر لمدة 5 ساعات قبل أن تحاول مرة أخرى');
         } else if (msg.includes('password_error')) {
           setError('كلمة المرور غير صحيحة');
         } else if (msg === 'MISSING_ROLE') {
@@ -457,7 +459,7 @@ const SignIn: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  });
   
 
   return (
