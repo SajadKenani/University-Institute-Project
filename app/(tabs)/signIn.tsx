@@ -163,7 +163,7 @@ export default function SignIn() {
           setErrors(prev => ({ ...prev, general: 'يجب أن تنتظر لمدة ساعة قبل أن تحاول مرة أخرى' }));
         } else if (msg.includes('limit_issue_five_hours')) {
           setErrors(prev => ({ ...prev, general: 'يجب أن تنتظر لمدة 5 ساعات قبل أن تحاول مرة أخرى' }));
-        } else if (msg.includes('password_error')) {
+        } else if (msg.includes('password_issue')) {
           setErrors(prev => ({ ...prev, password: 'كلمة المرور غير صحيحة' }));
         } else if (msg === 'MISSING_ROLE') {
           setErrors(prev => ({ ...prev, general: 'فشل في جلب معلومات المستخدم' }));
