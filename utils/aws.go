@@ -176,4 +176,3 @@ func HandleVideoRemovingFromAWS(ctx *gin.Context, originalKey, compressedKey str
 
 	return nil
 }
-

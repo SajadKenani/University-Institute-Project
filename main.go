@@ -1,7 +1,7 @@
 package main
 
 import (
-	"Backend/db" // Adjust to your module path
+	"Backend/db" 
 	"Backend/endpoints"
 	"Backend/utils"
 
@@ -30,7 +30,6 @@ func RecoveryWithLogger() gin.HandlerFunc {
 	}
 }
 
-
 func main() {
 	// Load .env file
 	err := godotenv.Load()
@@ -38,7 +37,6 @@ func main() {
 		log.Fatalf("Error loading .env file")
 	}
 	
-
 	utils.InitS3()
 	// Initialize the product and department database connections
 	db.InitDB()
