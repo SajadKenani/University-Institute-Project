@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import { DELETE, getToken, POST } from "../components/Requests";
 import { HandleLogin } from "../components/Auth";
 import { Fullscreen, Pause, Play, ScreenShareOff, Upload, Video, Volume2, VolumeX, X } from "lucide-react";
-import { UPLOAD } from "../components/UI/video/Upload";
+import { UPLOAD } from "../components/UI/Video/Upload";
+import { PLAYLIST } from "../components/UI/Video/Playlist";
 
 interface VideoItem {
   id: number;
@@ -20,8 +21,6 @@ interface VideoItem {
 const API_BASE_URL = import.meta.env.VITE_SERVER_URL;
 
 export const VIDEOS = () => {
-
-
   // UI states
   const [activeTab, setActiveTab] = useState<"upload" | "library" | "playlist">("upload");
 
@@ -44,7 +43,6 @@ export const VIDEOS = () => {
   // Data states
   const [allVideos, setAllVideos] = useState<VideoItem[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<VideoItem | null>(null);
-
 
   const [videoQuality, setVideoQuality] = useState<"high" | "low">("high");
 
@@ -427,7 +425,7 @@ export const VIDEOS = () => {
         <div className="flex-1 p-6">
           {activeTab === "upload" ? (
             <UPLOAD />
-          ) : activeTab === "playlist" ? (<>Playlist</>)
+          ) : activeTab === "playlist" ? (<PLAYLIST />)
           :  (
             <div>
               {isLoading && !selectedVideo ? (
