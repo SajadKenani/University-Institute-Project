@@ -90,3 +90,11 @@ type Attendence struct {
 	LectureName  string `json:"lecture_name"`
 	Date         string `json:"date" db:"date"`
 }
+
+type Playlist struct {
+	ID        int    `json:"id,omitempty" db:"id"`
+	AuthorID  int    `json:"author_id" db:"author_id"`
+	CreatedAt string `json:"created_at" db:"created_at"`
+	Title     string `json:"title" validate:"required" db:"title"`
+	Thumbnail string `json:"thumbnail" db:"thumbnail"`
+}

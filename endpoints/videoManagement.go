@@ -4,7 +4,7 @@ import (
 	"Backend/db"
 	"Backend/handlers"
 	"Backend/utils"
-	
+
 	"io"
 	"log"
 	"net/http"
@@ -17,7 +17,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
-
 
 func UploadVideo(ctx *gin.Context) {
 	if !strings.HasPrefix(ctx.ContentType(), "multipart/form-data") {
@@ -139,8 +138,8 @@ func HandleVideosFetching(ctx *gin.Context) {
 		return
 	}
 	var videos []handlers.Video
-	err = db.DB.Select(&videos, "SELECT id, author_id, thumbnail, url, compressed_url, title, create_at from videos WHERE author_id = $1", 
-	videoRequest.AuthorID)
+	err = db.DB.Select(&videos, "SELECT id, author_id, thumbnail, url, compressed_url, title, create_at from videos WHERE author_id = $1",
+		videoRequest.AuthorID)
 	if err != nil {
 		utils.HandleError(ctx, nil, "Failed to fetch videos from the database", http.StatusInternalServerError)
 		return
@@ -192,4 +191,60 @@ func HandleVideoRemoving(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusAccepted, gin.H{"message": "Video was removed successfully"})
+}
+
+// Playlist Section
+func HandlePlaylistCreation(ctx *gin.Context) {
+	var playlist handlers.Playlist
+	playlist.CreatedAt = time.Now().Format("2006-01-02 15:04:05")
+
+	// === Thumbnail generation ===
+	thumbnailPath, err := utils.HandleThumbnailGeneration(ctx, playlist)
+	if err != nil {
+		log.Printf("Error generating thumbnail: %v", err)
+		utils.HandleError(ctx, nil, "Error generating thumbnail", http.StatusInternalServerError)
+		return
+	}
+	playlist.Thumbnail = thumbnailPath
+
+	_, err = db.DB.Exec("INSERT INTO playlist (author_id, title, thumbnail, created_at) VALUES ($1, $2, $3, $4)", 
+	ctx.PostForm("author_id"), ctx.PostForm("title"), playlist.Thumbnail, playlist.CreatedAt)
+	if err != nil {
+		utils.HandleError(ctx, err, "Failed to insert the video into the database", http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusAccepted, gin.H{"message": "Playlist was created successfully!"})
+}
+func HandlePlaylistsFetching(ctx *gin.Context) {
+	var Playlists []handlers.Playlist
+
+	err := db.DB.Select(&Playlists, "SELECT id, author_id, title, thumbnail, created_at FROM playlist WHERE author_id = $1", ctx.Param("author_id"))
+	if err != nil {
+		utils.HandleError(ctx, err, "Failed to fetch playlists from the database", http.StatusInternalServerError)
+		return
+	}
+
+	// If no playlists are found for the given author_id
+	if len(Playlists) == 0 {
+		utils.HandleError(ctx, err, "No playlists found for this author", http.StatusNotFound)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"data": Playlists})
+}
+func HandlePlaylistRemoving(ctx *gin.Context) {
+	result, err := db.DB.Exec("DELETE FROM playlist WHERE id = $1", ctx.Param("id"))
+	if err != nil {
+		utils.HandleError(ctx, err, "Failed to delete the playlist from the database", http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		utils.HandleError(ctx, nil, "Announcement not found", http.StatusNotFound)
+		return
+	}
+
+	ctx.JSON(http.StatusAccepted, gin.H{"message": "Playlist was deleted successfully!"})
 }

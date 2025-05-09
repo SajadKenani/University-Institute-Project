@@ -108,7 +108,6 @@ CREATE TABLE public.playlist_video (
     PRIMARY KEY (playlist_id, video_id)
 );
 
-
 -- Indexes
 CREATE INDEX idx_announcement_author ON public.announcement (author_id);
 CREATE INDEX idx_student_author ON public.student_account (author_id);

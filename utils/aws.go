@@ -11,8 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"Backend/handlers"
-
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
@@ -125,7 +123,7 @@ func UploadCompressedVideo(ctx *gin.Context, inputPath, outputPath string) (stri
 	return s3Key, nil
 }
 
-func HandleThumbnailGeneration(ctx *gin.Context, video handlers.Video) (string, error) {
+func HandleThumbnailGeneration(ctx *gin.Context, video interface{}) (string, error) {
 	// Handle thumbnail file upload
 	thumbnail, err := ctx.FormFile("thumbnail")
 	if err != nil {
