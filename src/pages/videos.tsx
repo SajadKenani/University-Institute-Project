@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import { DELETE, getToken, POST } from "../components/Requests";
 import { HandleLogin } from "../components/Auth";
 import { Fullscreen, Pause, Play, ScreenShareOff, Upload, Video, Volume2, VolumeX, X } from "lucide-react";
-import { UPLOAD } from "../components/UI/Video/Upload";
-import { PLAYLIST } from "../components/UI/Video/Playlist";
+import { UPLOAD } from "../components/UI/video/Upload"; 
+import { PLAYLIST } from "../components/UI/video/Playlist"; 
 
 interface VideoItem {
   id: number;
@@ -422,12 +422,12 @@ export const VIDEOS = () => {
         </div>
   
         {/* Main content */}
-        <div className="flex-1 p-6">
+        <div className="p-0 pb-20 ">
           {activeTab === "upload" ? (
             <UPLOAD />
           ) : activeTab === "playlist" ? (<PLAYLIST />)
           :  (
-            <div>
+            <div className="p-6">
               {isLoading && !selectedVideo ? (
                 <div className="flex items-center justify-center h-64" role="status">
                   <svg className="animate-spin h-10 w-10 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
