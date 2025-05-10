@@ -102,9 +102,9 @@ CREATE TABLE public.playlist (
 );
 
 CREATE TABLE public.playlist_video (
+    id SERIAL PRIMARY KEY,
     playlist_id INT NOT NULL REFERENCES public.playlist(id) ON DELETE CASCADE,
     video_id INT NOT NULL REFERENCES public.video(id) ON DELETE CASCADE,
-    order_index INT NOT NULL,
     PRIMARY KEY (playlist_id, video_id)
 );
 

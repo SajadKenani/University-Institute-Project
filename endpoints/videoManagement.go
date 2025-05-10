@@ -248,3 +248,26 @@ func HandlePlaylistRemoving(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusAccepted, gin.H{"message": "Playlist was deleted successfully!"})
 }
+func HandleAddingVideoToPlaylist(ctx *gin.Context) {
+	var PlaylistVideo handlers.PlaylistVideo
+	err := ctx.ShouldBindJSON(&PlaylistVideo)
+	if err != nil {
+		utils.HandleError(ctx, err, "Failed to bind with JSON", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = db.DB.Exec(`INSERT INTO playlist_video (playlist_id, video_id) VALUES ($1, $2)`, PlaylistVideo.PlaylistID, PlaylistVideo.VideoID)
+	if err != nil {
+		utils.HandleError(ctx, err, "Failed to insert into the database", http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusAccepted, gin.H{"message": "Video was successfully added to the playlist!"})
+}
+
+// CREATE TABLE public.playlist_video (
+//     playlist_id INT NOT NULL REFERENCES public.playlist(id) ON DELETE CASCADE,
+//     video_id INT NOT NULL REFERENCES public.video(id) ON DELETE CASCADE,
+//     order_index INT NOT NULL,
+//     PRIMARY KEY (playlist_id, video_id)
+// );

@@ -98,3 +98,9 @@ type Playlist struct {
 	Title     string `json:"title" validate:"required" db:"title"`
 	Thumbnail string `json:"thumbnail" db:"thumbnail"`
 }
+
+type PlaylistVideo struct {
+	ID        int    `json:"id,omitempty" db:"id"`
+	PlaylistID int    `json:"playlist_id" db:"playlist_id"`
+	VideoID   int    `json:"video_id" db:"video_id"`
+}

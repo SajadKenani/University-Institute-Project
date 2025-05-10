@@ -97,6 +97,7 @@ func main() {
 		auth.POST("/api/create-playlist", endpoints.HandlePlaylistCreation)
 		auth.GET("/api/fetch-playlists/:author_id", endpoints.HandlePlaylistsFetching)
 		auth.DELETE("/api/delete-playlist/:id", endpoints.HandlePlaylistRemoving)
+		auth.POST("/api/add-video-to-playlist", endpoints.HandleAddingVideoToPlaylist)
 
 		auth.POST("/api/create-season", endpoints.HandleSeasonCreation)
 		auth.GET("/api/fetch-seasons/:id", endpoints.HandleSeasonsFetching)
