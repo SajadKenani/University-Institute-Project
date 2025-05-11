@@ -1,8 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { DELETE, GET, getToken, POST, PUT } from "../components/Requests";
-import { useNavigate } from "react-router-dom";
+import { DELETE, GET, getToken, POST } from "../components/Requests";
 import {
-  Users,
   UserPlus,
   Mail,
   Lock,
@@ -17,37 +15,31 @@ import {
   Edit,
   Trash2,
   FileText,
-  Menu,
-  ChevronDown
+ 
 } from "lucide-react";
 import { HandleLogin } from "../components/Auth";
+import { setShowAddClassForm, setShowAddForm, setShowCSVUploadForm, setStudents } from "../redux/actions";
+import { useDispatch, useSelector } from "react-redux";
+import { HEADERNAV } from "../components/UI/headerNav";
+import { STUDENTTAB } from "../components/UI/studentTab";
 
-interface Student {
-  id?: number;
-  name: string;
-  email: string;
-  password: string;
-  class: string;
-}
 
 interface Class {
   id?: number;
   name?: string;
 }
 
+
 export const STUDENTS = () => {
-  const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
-  const [newStudent, setNewStudent] = useState<Student>({
+  const [newStudent, setNewStudent] = useState<any>({
     name: "",
     email: "",
     password: "",
     class: "",
   });
-  const [searchTerm, setSearchTerm] = useState("");
   const [classSearchTerm, setClassSearchTerm] = useState("");
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [showAddClassForm, setShowAddClassForm] = useState(false);
+
   const [loading, setLoading] = useState({
     fetchingStudents: false,
     fetchingClasses: false,
@@ -57,15 +49,18 @@ export const STUDENTS = () => {
   const [className, setClassName] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [classError, setClassError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'students' | 'classes'>('students');
   const [classViewMode, setClassViewMode] = useState<'grid' | 'list'>('grid');
-  const [counter, setCounter] = useState<number>(0);
-  const [selectedClass, setSelectedClass] = useState<number>(0);
   const [SCVForm, setSCVForm] = useState<any>(null);
-  const [showCSVUploadForm, setShowCSVUploadForm] = useState<boolean>(false);
-  const [mobileMenu, setMobileMenu] = useState<boolean>(false);
+  
+  const activeTab = useSelector((state: any) => state.reducer.activeTab);
+  const showAddForm = useSelector((state: any) => state.reducer.showAddForm);
+  const showAddClassForm = useSelector((state: any) => state.reducer.showAddClassForm);
+  const showCSVUploadForm = useSelector((state: any) => state.reducer.showCSVUploadForm);
+  const dispatch = useDispatch();
 
-  const navigate = useNavigate();
+  console.log(activeTab, showAddForm, showAddClassForm, showCSVUploadForm);
+
+
 
   const handleStudentsFetching = useCallback(async () => {
     const userId = localStorage.getItem('userId');
@@ -81,7 +76,7 @@ export const STUDENTS = () => {
       const response = await GET(`api/fetch-student-accounts/${Number(userId)}`);
 
       if (response.data && Array.isArray(response.data)) {
-        setStudents(response.data);
+        dispatch(setStudents(response.data));
       } else {
         setError("Invalid response format");
       }
@@ -157,7 +152,7 @@ export const STUDENTS = () => {
 
       if (response) {
         // Update local state
-        setStudents(prev => [...prev, { ...newStudent, id: response?.data?.id ? response.data.id : 0 }]);
+        dispatch(setStudents(prev => [...prev, { ...newStudent, id: response?.data?.id ? response.data.id : 0 }]));
 
         // Reset form
         setNewStudent({
@@ -168,7 +163,7 @@ export const STUDENTS = () => {
         });
 
         // Hide the form after successful submission
-        setShowAddForm(false);
+        dispatch(setShowAddForm(false));
       } else {
         setError("Failed to create student account");
       }
@@ -182,7 +177,7 @@ export const STUDENTS = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setNewStudent(prev => ({
+    setNewStudent((prev: any) => ({
       ...prev,
       [name]: value
     }));
@@ -224,7 +219,7 @@ export const STUDENTS = () => {
         setClassName("");
 
         // Hide the form after successful submission
-        setShowAddClassForm(false);
+        dispatch(setShowAddClassForm(false));
       } else {
         setClassError("Failed to create class");
       }
@@ -248,40 +243,6 @@ export const STUDENTS = () => {
     }
   };
 
-  const handleStudentDeletion = async (studentId: number) => {
-    setLoading(prev => ({ ...prev, insertingStudent: true }));
-    try {
-      await DELETE(`api/delete-student/${studentId}`);
-    } catch (error) { console.log(error); }
-    finally {
-      setLoading(prev => ({ ...prev, insertingStudent: false }));
-      handleStudentsFetching();
-    }
-  };
-
-  const handleSettingStudentsToClasses = useCallback(async (counter: number) => {
-    setLoading(prev => ({ ...prev, insertingClass: true }));
-    try {
-      await POST(`api/set-students-to-classes/${Number(counter)}`, {});
-    } catch (error) { console.log(error); }
-    finally {
-      setLoading(prev => ({ ...prev, insertingClass: false }));
-      handleClassesFetching();
-      handleStudentsFetching();
-    }
-  }, [handleClassesFetching, handleStudentsFetching]);
-
-  const handleClassAdjustment = useCallback(async (student_id: number) => {
-    setLoading(prev => ({ ...prev, insertingClass: true }));
-    try {
-      await PUT(`api/update-class/${student_id}/${Number(selectedClass)}`, {});
-    } catch (error) { console.log(error); }
-    finally {
-      handleStudentsFetching();
-      handleClassesFetching();
-      setLoading(prev => ({ ...prev, insertingClass: false }));
-    }
-  }, [selectedClass, handleStudentsFetching, handleClassesFetching]);
 
   // Color palette for class cards
   const colorClasses = [
@@ -355,7 +316,7 @@ export const STUDENTS = () => {
       setLoading(prev => ({ ...prev, insertingClass: false }));
       handleClassesFetching();
       handleStudentsFetching();
-      setShowCSVUploadForm(false);
+      dispatch(setShowCSVUploadForm(false));
     }
   };
 
@@ -363,10 +324,7 @@ export const STUDENTS = () => {
     return colorClasses[index % colorClasses.length];
   };
 
-  const filteredStudents = students.filter(student =>
-    student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+
 
   const filteredClasses = classes.filter(cls =>
     cls.name?.toLowerCase().includes(classSearchTerm.toLowerCase())
@@ -381,356 +339,11 @@ export const STUDENTS = () => {
     <div className="min-h-screen p-3 sm:p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header with navigation between tabs */}
-        <div className="flex flex-col mb-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-            <div className="flex items-center mb-4 md:mb-0">
-              {activeTab === 'students' ? (
-                <Users className="text-indigo-600 ml-3" size={24} />
-              ) : (
-                <BookOpen className="text-emerald-600 ml-3" size={24} />
-              )}
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-                {activeTab === 'students' ? 'إدارة الطلاب' : 'إدارة الفصول'}
-              </h1>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row items-center gap-3">
-              {activeTab === 'students' && (
-                <button
-                  onClick={() => setShowCSVUploadForm(true)}
-                  className="w-full sm:w-auto px-4 lg:px-6 bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center p-2 
-                  rounded-full shadow-md transition-all transform hover:scale-105 mb-2 sm:mb-0"
-                >
-                  <FileText size={18} className="ml-1" />
-                  <span className="text-sm">اضافة عن طريق الـ CSV</span>
-                </button>
-              )}
-              
-              <div className="relative">
-                <button
-                  onClick={() => setMobileMenu(!mobileMenu)}
-                  className="md:hidden flex items-center justify-center p-2 bg-gray-100 rounded-lg"
-                >
-                  <Menu size={18} className="ml-1" />
-                  <span className="text-sm">القائمة</span>
-                  <ChevronDown size={16} className="mr-1" />
-                </button>
-                
-                {mobileMenu && (
-                  <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg z-10 md:hidden overflow-hidden">
-                    <button
-                      onClick={() => {
-                        setActiveTab('students');
-                        setMobileMenu(false);
-                      }}
-                      className={`w-full p-3 text-right ${activeTab === 'students' ? 'bg-indigo-100 text-indigo-700' : 'hover:bg-gray-50'}`}
-                    >
-                      <div className="flex items-center">
-                        <Users size={16} className="ml-2" />
-                        <span className="text-sm">الطلاب</span>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setActiveTab('classes');
-                        setMobileMenu(false);
-                      }}
-                      className={`w-full p-3 text-right ${activeTab === 'classes' ? 'bg-emerald-100 text-emerald-700' : 'hover:bg-gray-50'}`}
-                    >
-                      <div className="flex items-center">
-                        <BookOpen size={16} className="ml-2" />
-                        <span className="text-sm">الفصول</span>
-                      </div>
-                    </button>
-                    <div className="border-t border-gray-100 p-2">
-                      {activeTab === 'students' ? (
-                        <button
-                          onClick={() => {
-                            setShowAddForm(true);
-                            setMobileMenu(false);
-                          }}
-                          className="w-full p-2 bg-indigo-600 text-white rounded-md flex items-center justify-center"
-                        >
-                          <Plus size={16} className="ml-1" />
-                          <span className="text-sm">إضافة طالب</span>
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setShowAddClassForm(true);
-                            setMobileMenu(false);
-                          }}
-                          className="w-full p-2 bg-emerald-600 text-white rounded-md flex items-center justify-center"
-                        >
-                          <Plus size={16} className="ml-1" />
-                          <span className="text-sm">إضافة فصل</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              <div className="hidden md:flex p-1 bg-gray-100 rounded-lg ml-4">
-                <button
-                  onClick={() => setActiveTab('students')}
-                  className={`px-4 py-2 rounded-md transition-all ${activeTab === 'students'
-                    ? 'bg-indigo-600 text-white shadow-md'
-                    : 'text-gray-600 hover:bg-gray-200'
-                    }`}
-                >
-                  <div className="flex items-center">
-                    <Users size={18} className="ml-2" />
-                    <span>الطلاب</span>
-                  </div>
-                </button>
-                <button
-                  onClick={() => setActiveTab('classes')}
-                  className={`px-4 py-2 rounded-md transition-all ${activeTab === 'classes'
-                    ? 'bg-emerald-600 text-white shadow-md'
-                    : 'text-gray-600 hover:bg-gray-200'
-                    }`}
-                >
-                  <div className="flex items-center">
-                    <BookOpen size={18} className="ml-2" />
-                    <span>الفصول</span>
-                  </div>
-                </button>
-              </div>
-              
-              <div className="hidden md:block">
-                {activeTab === 'students' ? (
-                  <button
-                    onClick={() => setShowAddForm(true)}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center p-2 
-                    rounded-full shadow-md transition-all transform hover:scale-105"
-                  >
-                    <Plus size={18} className="m-2" />
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => setShowAddClassForm(true)}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center p-2 
-                    rounded-full shadow-md transition-all transform hover:scale-105"
-                  >
-                    <Plus size={18} className="m-2" />
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        <HEADERNAV />
 
         {/* Students Tab Content */}
         {activeTab === 'students' && (
-          <div className="bg-white rounded-xl shadow-xl overflow-hidden">
-            {/* Search bar */}
-            <div className="bg-indigo-600 p-3 sm:p-4 flex flex-col md:flex-row justify-between items-center">
-              <div className="flex items-center space-x-2 text-white mb-3 md:mb-0 w-full md:w-auto">
-                <Users size={20} />
-                <h2 className="text-lg sm:text-xl font-semibold mr-2">الطلاب</h2>
-                <span className="bg-white text-indigo-600 px-2 sm:px-3 py-1 rounded-full text-sm font-medium">
-                  {students.length}
-                </span>
-              </div>
-              
-              <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto mb-3 md:mb-0">
-                <input
-                  type="number"
-                  value={counter}
-                  onChange={(e) => setCounter(Number(e.target.value))}
-                  className="w-16 sm:w-20 px-2 sm:px-4 py-2 rounded-full border border-gray-300 
-                    focus:outline-none focus:ring-2 focus:ring-indigo-500 
-                    text-gray-700 text-sm bg-white"
-                  placeholder="العدد"
-                />
-
-                <button
-                  onClick={() => handleSettingStudentsToClasses(counter)}
-                  className="bg-white hover:bg-white text-indigo-600 text-sm 
-                    px-2 py-2 rounded-full shadow-md transition-all duration-200"
-                >
-                  <Plus />
-                </button>
-              </div>
-
-              <div className="relative w-full md:w-72">
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pr-10 w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none 
-                    focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                  placeholder="بحث عن طلاب..."
-                />
-              </div>
-            </div>
-
-            {/* Students list */}
-            {loading.fetchingStudents ? (
-              <div className="flex items-center justify-center p-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
-              </div>
-            ) : students.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-8 sm:p-16 text-center">
-                <Users className="text-gray-400 mb-4" size={48} />
-                <p className="text-gray-600 text-lg sm:text-xl font-medium mb-2">لم يتم العثور على طلاب</p>
-                <p className="text-gray-500 mb-6">ابدأ بإضافة أول طالب</p>
-                <button
-                  onClick={() => setShowAddForm(true)}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center px-4 py-2 rounded-lg"
-                >
-                  <UserPlus size={20} className="ml-2" />
-                  <span>إضافة طالب</span>
-                </button>
-              </div>
-            ) : filteredStudents.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center">
-                <Search className="text-gray-400 mb-4" size={48} />
-                <p className="text-gray-500 text-lg">لا يوجد طلاب مطابقين</p>
-                <p className="text-gray-400 text-sm mt-2">جرب مصطلح بحث مختلف</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                {/* Mobile view - card style for small screens */}
-                <div className="sm:hidden">
-                  {filteredStudents.map((student) => (
-                    <div 
-                      key={student.id} 
-                      className="border-b border-gray-200 p-4"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h3 className="font-bold text-gray-800">{student.name}</h3>
-                          <p className="text-sm text-gray-600">{student.email}</p>
-                        </div>
-                        <div className="flex">
-                          <button 
-                            className="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-full"
-                            onClick={() => handleStudentDeletion(student.id || 0)}
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="mt-2">
-                        <p className="text-sm text-gray-600 mb-1">
-                          <span className="font-medium">الفصل:</span> {student.class || 'غير معين'}
-                        </p>
-                        <div className="flex flex-col space-y-2 mt-3">
-                          <div className="flex items-center space-x-2">
-                            <select
-                              className="flex-1 p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                              onChange={(event) => {
-                                const value = Number(event.target.value);
-                                setSelectedClass(value);
-                              }}
-                            >
-                              <option value="">اختر فصلاً</option>
-                              {classes?.length > 0 &&
-                                classes.map((item) => (
-                                  <option key={item.id} value={item.id}>
-                                    {item.name}
-                                  </option>
-                                ))}
-                            </select>
-                            <button
-                              onClick={() => handleClassAdjustment(Number(student.id))}
-                              className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-md text-sm whitespace-nowrap"
-                            >
-                              تعيين
-                            </button>
-                          </div>
-                          <button
-                            className="w-full bg-indigo-100 hover:bg-indigo-200 text-indigo-700 py-2 rounded-lg text-sm font-medium transition-colors"
-                            onClick={() => {
-                              localStorage.setItem("studentID", String(student.id));
-                              navigate("student");
-                            }}
-                          >
-                            عرض التفاصيل
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                {/* Desktop view - table style for larger screens */}
-                <table className="hidden sm:table w-full border-collapse">
-                  <thead>
-                    <tr className="bg-gray-50 text-indigo-900">
-                      <th className="p-4 text-right font-medium">الاسم</th>
-                      <th className="p-4 text-right font-medium">البريد الإلكتروني</th>
-                      <th className="p-4 text-right font-medium">الفصل</th>
-                      <th className="p-4 text-right font-medium">تعيين الفصل</th>
-                      <th className="p-4 text-right font-medium">الإجراءات</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredStudents.map((student) => (
-                      <tr
-                        key={student.id}
-                        className="border-b hover:bg-indigo-50 transition-colors duration-150"
-                      >
-                        <td className="p-4 text-right font-medium text-gray-800">{student.name}</td>
-                        <td className="p-4 text-right text-gray-600">{student.email}</td>
-                        <td className="p-4 text-right text-gray-600">{student.class}</td>
-                        <td className="p-4 align-end lg:w-64">
-                          <div className="flex items-center justify-start space-x-2">
-                            <select
-                              className="w-full sm:w-40 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                              onChange={(event) => {
-                                const value = Number(event.target.value);
-                                setSelectedClass(value);
-                              }}
-                            >
-                              <option value="">اختر فصلاً</option>
-                              {classes?.length > 0 &&
-                                classes.map((item) => (
-                                  <option key={item.id} value={item.id}>
-                                    {item.name}
-                                  </option>
-                                ))}
-                            </select>
-                            <button
-                              onClick={() => handleClassAdjustment(Number(student.id))}
-                              className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-md text-sm whitespace-nowrap"
-                            >
-                              تعيين
-                            </button>
-                          </div>
-                        </td>
-                        <td className="p-4 text-right">
-                          <div className="flex items-center space-x-2">
-                            <button
-                              className="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors mx-2"
-                              onClick={() => {
-                                localStorage.setItem("studentID", String(student.id));
-                                navigate("student");
-                              }}
-                            >
-                              عرض التفاصيل
-                            </button>
-
-                            <button 
-                              className="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-lg"
-                              onClick={() => handleStudentDeletion(student.id || 0)}
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+          <STUDENTTAB />
         )}
 
          {/* محتوى تبويب الفصول */}
@@ -793,7 +406,7 @@ export const STUDENTS = () => {
                   <p className="text-gray-600 text-xl font-medium mb-2">لم يتم العثور على فصول</p>
                   <p className="text-gray-500 mb-6">ابدأ بإضافة أول فصل</p>
                   <button
-                    onClick={() => setShowAddClassForm(true)}
+                    onClick={() => dispatch(setShowAddClassForm(true))}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center px-4 py-2 rounded-lg"
                   >
                     <Plus size={20} className="ml-2" />
@@ -872,7 +485,7 @@ export const STUDENTS = () => {
                 <h2 className="text-xl font-semibold text-white mr-2">إضافة طالب جديد</h2>
               </div>
               <button
-                onClick={() => setShowAddForm(false)}
+                onClick={() => dispatch(setShowAddForm(false))}
                 className="text-white hover:bg-indigo-700 rounded-full p-1"
               >
                 <X size={20} />
@@ -947,7 +560,7 @@ export const STUDENTS = () => {
               <div className="flex items-center justify-end space-x-3 pt-3">
                 <button
                   type="button"
-                  onClick={() => setShowAddForm(false)}
+                  onClick={() => dispatch(setShowAddForm(false))}
                   className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 ml-3"
                 >
                   إلغاء
@@ -988,7 +601,7 @@ export const STUDENTS = () => {
                 <h2 className="text-xl font-semibold text-white mr-2">رفع ملف CSV</h2>
               </div>
               <button
-                onClick={() => setShowCSVUploadForm(false)}
+                onClick={() => dispatch(setShowCSVUploadForm(false))}
                 className="text-white hover:bg-indigo-700 rounded-full p-1"
               >
                 <X size={20} />
@@ -1021,7 +634,7 @@ export const STUDENTS = () => {
                 <h2 className="text-xl font-semibold text-white mr-2">إضافة فصل جديد</h2>
               </div>
               <button
-                onClick={() => setShowAddClassForm(false)}
+                onClick={() => dispatch(setShowAddClassForm(false))}
                 className="text-white hover:bg-emerald-700 rounded-full p-1"
               >
                 <X size={20} />
@@ -1058,7 +671,7 @@ export const STUDENTS = () => {
               <div className="flex items-center justify-end space-x-3 pt-3">
                 <button
                   type="button"
-                  onClick={() => setShowAddClassForm(false)}
+                  onClick={() => dispatch(setShowAddClassForm(false))}
                   className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 ml-3"
                 >
                   إلغاء

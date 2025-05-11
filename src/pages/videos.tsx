@@ -23,9 +23,6 @@ const API_BASE_URL = import.meta.env.VITE_SERVER_URL;
 export const VIDEOS = () => {
   // UI states
   const [activeTab, setActiveTab] = useState<"upload" | "library" | "playlist">("upload");
-
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Video playback states
@@ -106,7 +103,6 @@ export const VIDEOS = () => {
       }
     } catch (error) {
       console.error("Error fetching video stream:", error);
-      setError(`Failed to load video stream: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setIsLoading(false);
     }
@@ -114,7 +110,6 @@ export const VIDEOS = () => {
 
   const handleVideosFetching = useCallback(async () => {
     setIsLoading(true);
-    setError(null);
 
     try {
       const userId = localStorage.getItem("userId");
@@ -138,7 +133,6 @@ export const VIDEOS = () => {
       }
     } catch (error) {
       console.error("Failed to fetch videos:", error);
-      setError(`Failed to load videos: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setIsLoading(false);
     }
@@ -149,7 +143,6 @@ export const VIDEOS = () => {
       return;
     }
     setIsLoading(true);
-    setError(null);
 
     try {
       const response = await DELETE(`api/delete-video/${videoID}`);
@@ -161,10 +154,8 @@ export const VIDEOS = () => {
 
       // Refresh the video list after deletion
       await handleVideosFetching();
-      setSuccess(true);
     } catch (error) {
       console.error("Failed to delete video:", error);
-      setError(`Failed to delete video: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       handleVideosFetching();
       setIsLoading(false);

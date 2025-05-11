@@ -525,7 +525,8 @@ export const PLAYLIST = () => {
         <div className="flex items-center justify-center h-40 bg-white rounded-lg shadow-md">
           <svg className="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <path className="opacity-75" fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
         </div>
       ) : playlists.length > 0 ? (
@@ -562,8 +563,10 @@ export const PLAYLIST = () => {
                       <div className="flex items-center text-sm text-gray-500">
                         {playlist.created_at && (
                           <span className="flex items-center">
-                            <svg className="w-4 h-4 ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            <svg className="w-4 h-4 ml-1" xmlns="http://www.w3.org/2000/svg" 
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" 
+                              strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                             {formatDate(playlist.created_at)}
                           </span>
@@ -610,7 +613,8 @@ export const PLAYLIST = () => {
                 <div className="flex items-center justify-center h-40 bg-white rounded-lg">
                   <svg className="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <path className="opacity-75" fill="currentColor" 
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                 </div>
               ) : videosConnectedToPlaylist?.length > 0 ? (
@@ -721,7 +725,8 @@ export const PLAYLIST = () => {
                    id="playlist-title"
                    value={playlistTitle}
                    onChange={(e) => setPlaylistTitle(e.target.value)}
-                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none 
+                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                    placeholder="أدخل عنوان قائمة التشغيل"
                    required
                  />
@@ -731,7 +736,8 @@ export const PLAYLIST = () => {
                <div className="mb-4">
                  <label className="block mb-2 font-medium text-gray-700">صورة قائمة التشغيل</label>
                  <div
-                   className={`border-2 border-dashed rounded-lg p-4 relative h-44 flex flex-col items-center justify-center cursor-pointer ${
+                   className={`border-2 border-dashed rounded-lg p-4 relative h-44 flex flex-col 
+                    items-center justify-center cursor-pointer ${
                      dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:bg-gray-50"
                    }`}
                    onDragEnter={handleDrag}
@@ -761,7 +767,8 @@ export const PLAYLIST = () => {
                            setThumbnail(null);
                            setThumbnailPreview(null);
                          }}
-                         className="absolute top-0 left-0 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
+                         className="absolute top-0 left-0 bg-red-500 text-white rounded-full 
+                         p-1 shadow-md hover:bg-red-600 transition-colors"
                          aria-label="حذف الصورة"
                        >
                          <X size={16} />
@@ -770,7 +777,10 @@ export const PLAYLIST = () => {
                    ) : (
                      <>
                        <div className="bg-gray-100 p-2 rounded-full mb-3">
-                         <img className="w-8 h-8" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12' /%3E%3C/svg%3E" alt="تحميل" />
+                         <img className="w-8 h-8" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' 
+                         fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' 
+                         stroke-linejoin='round' stroke-width='2' 
+                         d='M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12' /%3E%3C/svg%3E" alt="تحميل" />
                        </div>
                        <p className="text-sm text-gray-600 text-center">
                          اسحب وأفلت صورة هنا، أو
@@ -795,7 +805,8 @@ export const PLAYLIST = () => {
                  <button
                    type="submit"
                    disabled={isLoading}
-                   className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center ${
+                   className={`px-4 py-2 bg-blue-600 text-white rounded-md 
+                    hover:bg-blue-700 transition-colors flex items-center ${
                      isLoading ? "opacity-70 cursor-not-allowed" : ""
                    }`}
                  >
@@ -803,7 +814,8 @@ export const PLAYLIST = () => {
                      <>
                        <svg className="animate-spin ml-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                         <path className="opacity-75" fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                        </svg>
                        جاري الإنشاء...
                      </>

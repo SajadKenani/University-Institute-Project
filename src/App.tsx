@@ -439,6 +439,25 @@ const SignIn: React.FC = () => {
       if (typeof err === 'object' && err !== null) {
         const msg = 'message' in err ? (err as Error).message : '';
   
+        let extractedJson = '';
+        try {
+          const jsonMatch = msg.match(/\{.*\}/);
+          if (jsonMatch) extractedJson = jsonMatch[0];
+        } catch {
+          console.log("Error extracting JSON part from the message.");
+        }
+  
+        try {
+          const parsed = extractedJson ? JSON.parse(extractedJson) : {};
+          console.log(parsed);
+  
+          if (parsed.password_issue) {
+            message = `كلمة المرور غير صحيحة. المحاولات المتبقية: ${parsed.leftAttempts}`;
+          }
+        } catch {
+          console.log("Failed to parse the JSON part.");
+        }
+  
         if (msg.includes('limit_issue_five_hours')) {
           message = 'يجب أن تنتظر لمدة 5 ساعات قبل أن تحاول مرة أخرى';
         } else if (msg.includes('limit_issue_one_hour')) {
@@ -447,14 +466,7 @@ const SignIn: React.FC = () => {
           message = 'لقد تم قفل حسابك، الرجاء التواصل مع الدعم الفني';
         } else if (msg === 'MISSING_ROLE') {
           message = 'فشل في جلب معلومات المستخدم';
-        } else if (msg.includes('password_issue')) {
-          try {
-            const parsed = JSON.parse(msg);
-            message = `كلمة المرور غير صحيحة. المحاولات المتبقية: ${parsed.leftAttempts}`;
-          } catch {
-            message = 'كلمة المرور غير صحيحة';
-          }
-        } else if (msg) {
+        } else if (!extractedJson && msg) {
           message = `حدث خطأ داخلي: ${msg}`;
         }
       }
@@ -464,6 +476,7 @@ const SignIn: React.FC = () => {
       setLoading(false);
     }
   };
+  
   
   
   
