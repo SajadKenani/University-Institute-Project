@@ -152,8 +152,9 @@ func HandleUserSignInProcess(ctx *gin.Context) {
 
 	// Compare the hashed passwords
 	if storedAccount.Password != inputHashBase64 {
-		utils.HandleLimitAndStatus(ctx, storedAccount, "admin_account")
-		ctx.JSON(http.StatusUnauthorized, gin.H{"password_issue": "كلمة المرور غير صحيحة"})
+		leftAttempts := utils.HandleLimitAndStatus(ctx, storedAccount, "admin_account")
+		ctx.JSON(http.StatusInternalServerError, gin.H{"password_issue": "كلمة المرور غير صحيحة", "leftAttempts": leftAttempts, "error": "err"})
+
 		return
 	}
 

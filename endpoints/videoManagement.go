@@ -264,6 +264,39 @@ func HandleAddingVideoToPlaylist(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusAccepted, gin.H{"message": "Video was successfully added to the playlist!"})
 }
+func FetchVideosConnectedToPlaylist(ctx *gin.Context) {
+	var PlaylistVideo []handlers.PlaylistVideo
+	playlistID := ctx.Param("playlist_id")
+	err := db.DB.Select(&PlaylistVideo, "SELECT video_id FROM playlist_video WHERE playlist_id = $1", playlistID)
+	if err != nil {
+		utils.HandleError(ctx, err, "Failed to video ids from the database", http.StatusInternalServerError)
+		return
+	}
+
+	var videos []handlers.Video
+	var video handlers.Video
+
+	for _, specifiedVideo := range PlaylistVideo {
+		err = db.DB.Get(&video, "SELECT id, author_id, thumbnail, title, create_at FROM videos WHERE id = $1 LIMIT 1", specifiedVideo.VideoID)
+		if err != nil {
+			utils.HandleError(ctx, err, "Failed to video ids from the database", http.StatusInternalServerError)
+			return
+		}
+
+		videos = append(videos, video)
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"data": videos})
+}
+func HandleRemovingFromPlaylist(ctx *gin.Context) {
+	_, err := db.DB.Exec(`DELETE FROM playlist_video WHERE video_id = $1`, ctx.Param("video_id"))
+	if err != nil {
+		utils.HandleError(ctx, err, "Failed to remove from the database", http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusAccepted, gin.H{"message": "Video was removed from the playlist successfully!"})
+}
 
 // CREATE TABLE public.playlist_video (
 //     playlist_id INT NOT NULL REFERENCES public.playlist(id) ON DELETE CASCADE,

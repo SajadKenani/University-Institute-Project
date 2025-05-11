@@ -98,6 +98,8 @@ func main() {
 		auth.GET("/api/fetch-playlists/:author_id", endpoints.HandlePlaylistsFetching)
 		auth.DELETE("/api/delete-playlist/:id", endpoints.HandlePlaylistRemoving)
 		auth.POST("/api/add-video-to-playlist", endpoints.HandleAddingVideoToPlaylist)
+		auth.GET("/api/fetch-videos-connected-to-playlist/:playlist_id", endpoints.FetchVideosConnectedToPlaylist)
+		auth.DELETE("/api/remove-video-from-playlist/:video_id", endpoints.HandleRemovingFromPlaylist)
 
 		auth.POST("/api/create-season", endpoints.HandleSeasonCreation)
 		auth.GET("/api/fetch-seasons/:id", endpoints.HandleSeasonsFetching)

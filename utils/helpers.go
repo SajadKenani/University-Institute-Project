@@ -228,7 +228,7 @@ func HandleCooldown(ctx *gin.Context, storedAccount StoredAccount, dbName string
 	}
 }
 
-func HandleLimitAndStatus(ctx *gin.Context, storedAccount StoredAccount, dbName string) {
+func HandleLimitAndStatus(ctx *gin.Context, storedAccount StoredAccount, dbName string) (int) {
 	const layout = time.RFC3339
 
 	status := storedAccount.Status
@@ -264,5 +264,6 @@ func HandleLimitAndStatus(ctx *gin.Context, storedAccount StoredAccount, dbName 
 		HandleError(ctx, err, "Failed to update limits and status", http.StatusInternalServerError)
 		
 	}
-
+	
+	return limits
 }
