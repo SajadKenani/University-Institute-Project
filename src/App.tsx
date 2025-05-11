@@ -389,7 +389,7 @@ const SignIn: React.FC = () => {
     return false;
   };
 
-  const handleSubmit = (async (e: React.FormEvent) => { 
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
   
     if (throttleSubmit()) return;
@@ -399,7 +399,7 @@ const SignIn: React.FC = () => {
   
     const phoneRegex = /^07\d{9}$/;
     const { phone_number, password } = credentials;
-
+  
     if (!phoneRegex.test(phone_number)) {
       setError('الرجاء إدخال رقم هاتف صحيح مكون من 11 رقمًا يبدأ بـ 07');
       setLoading(false);
@@ -411,19 +411,16 @@ const SignIn: React.FC = () => {
   
       if (!response || !response.value) {
         const fallbackError = response?.limit_issue || 'رقم الهاتف أو كلمة المرور غير صحيحة';
-        setError(fallbackError);
-        return;
+        throw new Error(fallbackError);
       }
   
       localStorage.setItem('userId', String(response.value));
       if (response.token) localStorage.setItem('token', response.token);
   
       const userResponse: UserResponse = await POST("api/handle-account-fetching", { id: Number(response.value) });
-  
       const user = userResponse?.data?.[0];
-      if (!user?.role) {
-        throw new Error('MISSING_ROLE');
-      }
+  
+      if (!user?.role) throw new Error('MISSING_ROLE');
   
       let role = user.role.toLowerCase();
       if (role === 'student') role = 'announcer';
@@ -437,29 +434,38 @@ const SignIn: React.FC = () => {
       localStorage.removeItem('userId');
       localStorage.removeItem('token');
   
-      if (err instanceof Error) {
-        const msg = err.message;
-        console.log(msg)
-
-        if (msg.includes('limit_issue_one_hour')) {
-          setError('يجب أن تنتظر لمدة ساعة قبل أن تحاول مرة أخرى');
-        } else  if (msg.includes('limit_issue_five_hours')) {
-          setError('يجب أن تنتظر لمدة 5 ساعات قبل أن تحاول مرة أخرى');
-        } else if (msg.includes('password_error')) {
-          setError('كلمة المرور غير صحيحة');
+      let message = 'حدث خطأ غير متوقع';
+  
+      if (typeof err === 'object' && err !== null) {
+        const msg = 'message' in err ? (err as Error).message : '';
+  
+        if (msg.includes('limit_issue_five_hours')) {
+          message = 'يجب أن تنتظر لمدة 5 ساعات قبل أن تحاول مرة أخرى';
+        } else if (msg.includes('limit_issue_one_hour')) {
+          message = 'يجب أن تنتظر لمدة ساعة قبل أن تحاول مرة أخرى';
+        } else if (msg.includes('limit_issue')) {
+          message = 'لقد تم قفل حسابك، الرجاء التواصل مع الدعم الفني';
         } else if (msg === 'MISSING_ROLE') {
-          setError('فشل في جلب معلومات المستخدم');
-        } else {
-          setError('حدث خطأ غير متوقع. حاول مجددًا.');
+          message = 'فشل في جلب معلومات المستخدم';
+        } else if (msg.includes('password_issue')) {
+          try {
+            const parsed = JSON.parse(msg);
+            message = `كلمة المرور غير صحيحة. المحاولات المتبقية: ${parsed.leftAttempts}`;
+          } catch {
+            message = 'كلمة المرور غير صحيحة';
+          }
+        } else if (msg) {
+          message = `حدث خطأ داخلي: ${msg}`;
         }
-      } else {
-        console.error("Unknown error:", err);
-        setError('حدث خطأ غير متوقع');
       }
+  
+      setError(message);
     } finally {
       setLoading(false);
     }
-  });
+  };
+  
+  
   
 
   return (
