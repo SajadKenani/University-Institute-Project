@@ -62,7 +62,7 @@ export const STUDENTS = () => {
 
 
 
-  const handleStudentsFetching = useCallback(async () => {
+const handleStudentsFetching = useCallback(async () => {
     const userId = localStorage.getItem('userId');
     if (!userId) {
       setError("User not authenticated");
@@ -152,7 +152,7 @@ export const STUDENTS = () => {
 
       if (response) {
         // Update local state
-        dispatch(setStudents(prev => [...prev, { ...newStudent, id: response?.data?.id ? response.data.id : 0 }]));
+        dispatch(setStudents((prev: any) => [...prev, { ...newStudent, id: response?.data?.id ? response.data.id : 0 }]));
 
         // Reset form
         setNewStudent({
@@ -323,8 +323,6 @@ export const STUDENTS = () => {
   const getColorClass = (index: number) => {
     return colorClasses[index % colorClasses.length];
   };
-
-
 
   const filteredClasses = classes.filter(cls =>
     cls.name?.toLowerCase().includes(classSearchTerm.toLowerCase())

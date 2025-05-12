@@ -1,4 +1,15 @@
-import { SET_SHOW_ADD_FORM, SET_SHOW_CSV_UPLOAD_FORM, SET_SHOW_ADD_CASSFORM, SET_ACTIVE_TAB, SET_STUDENTS, SET_STUDENTS_TO_CLASSES, SET_COUNTER, SET_SEARCH_TERM } from './actions';
+import {
+    SET_SHOW_ADD_FORM,
+    SET_SHOW_CSV_UPLOAD_FORM,
+    SET_SHOW_ADD_CASSFORM,
+    SET_ACTIVE_TAB,
+    SET_STUDENTS,
+    SET_STUDENTS_TO_CLASSES,
+    SET_COUNTER,
+    SET_SEARCH_TERM,
+    SET_SELECTED_CLASS,
+    SET_CLASSES
+} from './actions';
 
 
 export interface Student {
@@ -14,7 +25,8 @@ const initialState = {
     showCSVUploadForm: false,
     showAddClassForm: false,
     activeTab: 'students' as 'students' | 'classes',
-    students: [] as Student[]
+    students: [] as Student[],
+    selectedClass: ""
 };
 
 const reducer = (state = initialState, action: any) => {
@@ -49,16 +61,26 @@ const reducer = (state = initialState, action: any) => {
                 ...state,
                 studentsToClasses: action.payload
             }
-            case SET_COUNTER:
+        case SET_COUNTER:
             return {
                 ...state,
                 counter: action.payload
             }
-            case SET_SEARCH_TERM:
+        case SET_SEARCH_TERM:
             return {
                 ...state,
                 searchTerm: action.payload
             }
+        case SET_SELECTED_CLASS:
+            return {
+                ...state,
+                selectedClass: action.payload
+            }
+            case SET_CLASSES:
+                return {
+                    ...state,
+                    setClasses: action.payload
+                }
         default:
             return state;
     }
