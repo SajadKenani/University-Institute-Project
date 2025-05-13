@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import { DELETE, getToken, POST } from "../components/Requests";
 import { HandleLogin } from "../components/Auth";
 import { Fullscreen, Pause, Play, ScreenShareOff, Upload, Video, Volume2, VolumeX, X } from "lucide-react";
-import { UPLOAD } from "../components/UI/Video/Upload"; 
-import { PLAYLIST } from "../components/UI/Video/Playlist"; 
+import { UPLOAD } from "../components/UI/video/Upload"; 
+import { PLAYLIST } from "../components/UI/video/Playlist"; 
 
 interface VideoItem {
   id: number;

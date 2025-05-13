@@ -206,9 +206,9 @@ export const UPLOAD = () => {
         </div>
     );
     return (
-        <div className="mx-auto">
+        <div className="mx-10">
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                <div className="flex flex-col md:flex-row">
+                <div className="flex flex-col md:flex-row ">
                     {/* File drop area */}
                     <div className="md:w-1/2 p-6 border-r border-gray-200">
                         <div className="flex items-center justify-between mb-6">
