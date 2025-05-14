@@ -30,6 +30,7 @@ export const SPECIFIEDSTUDENT: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isRegistrationsLoading, setIsRegistrationsLoading] = useState<boolean>(false);
+  const [studentStatus, setStudentStatus] = useState<string | null>(null);
 
   // Helper to get IDs from localStorage
   const getLocalStorageId = (key: string): number | null => {
@@ -51,6 +52,7 @@ export const SPECIFIEDSTUDENT: React.FC = () => {
 
       if (response?.data) {
         setSubjects(response.data);
+        console.log("Fetched subjects:", response.data);
       } else {
         toast.warning("No subjects found for this student");
       }
@@ -131,7 +133,7 @@ export const SPECIFIEDSTUDENT: React.FC = () => {
     try {
       setIsRegistrationsLoading(true);
       const response = await GET(`api/fetch-students-registrations/${studentID}`);
-      
+
       if (response?.data) {
         // Process registrations with additional details if needed
         const enhancedRegistrations = response.data.map((reg: Registration) => ({
@@ -152,6 +154,31 @@ export const SPECIFIEDSTUDENT: React.FC = () => {
     }
   }, []);
 
+  const handleStatusFetching = useCallback(async () => {
+    const studentID = getLocalStorageId("studentID");
+
+    if (!studentID) return;
+    try {
+      const response = await GET(`api/fetch-student-status/${studentID}`)
+      console.log("Student status response:", response);
+      setStudentStatus(response.status)
+
+    } catch (error) { console.log(error) }
+
+  }, [])
+
+  const handleStatusUpdate = useCallback(async (updateStatus: string) => {
+    const studentID = getLocalStorageId("studentID");
+
+    if (!studentID) return;
+    try {
+      const response = await POST(`api/update-student-status/${studentID}`, { status: updateStatus })
+      console.log("Student status response:", response);
+      setStudentStatus(response.status)
+
+    } catch (error) { console.log(error) }
+  }, [])
+
   // Format date for display
   const formatDate = (dateString?: string) => {
     if (!dateString) return "N/A";
@@ -166,7 +193,8 @@ export const SPECIFIEDSTUDENT: React.FC = () => {
   useEffect(() => {
     handleStudentFetching();
     handleStudentsRegistrationsFetching();
-  }, [handleStudentFetching, handleStudentsRegistrationsFetching]);
+    handleStatusFetching();
+  }, [handleStudentFetching, handleStudentsRegistrationsFetching, handleStatusFetching]);
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -315,6 +343,30 @@ export const SPECIFIEDSTUDENT: React.FC = () => {
             </p>
           </div>
         </div>
+
+        <div className="flex flex-row items-center justify-center rounded-lg mx-auto">
+          <div className="text-lg font-semibold text-gray-800 items-center justify-center flex ml-20">
+            {studentStatus === "active" ? "فعال" : "غير فعال"}
+          </div>
+          {studentStatus === "active" ? 
+         
+          <button
+            className={`px-4 py-2 mt-2 rounded-lg text-white bg-red-500 hover:bg-red-600 }`}
+            onClick={() => handleStatusUpdate("inactive")}
+          >
+          الغاء التفعيل
+          </button>
+          :
+          <button
+            className={`px-4 py-2 mt-2 rounded-lg text-white bg-blue-500 hover:bg-blue-600 }`}
+            onClick={() => handleStatusUpdate("active")}
+          >
+             تفعيل
+          </button> 
+          }
+          
+        </div>
+
       </div>
     </div>
   );
