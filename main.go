@@ -84,6 +84,8 @@ func main() {
 		auth.GET("/api/fetch-students-registrations/:id", endpoints.HandleStudentsRegesrationsFetching)
 		auth.DELETE("/api/delete-student/:id", endpoints.HandleStudentDeletion)
 		auth.POST("/api/insert-via-csv/:author_id", endpoints.UploadViaCSV)
+		auth.GET("/api/fetch-student-status/:student_id", endpoints.FetchStudentStatus)
+		auth.POST("/api/update-student-status/:student_id", endpoints.HandleStudentStatusUpdate)
 
 		auth.POST("/api/insert-subject", endpoints.HandleSubjectInsertion)
 		auth.POST("/api/fetch-subjects", endpoints.HandleSubjectFetching)

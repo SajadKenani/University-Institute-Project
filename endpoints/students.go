@@ -493,3 +493,42 @@ func UploadViaCSV(ctx *gin.Context) {
 	// Send response back to the client
 	ctx.JSON(http.StatusOK, gin.H{"message": "CSV uploaded and parsed successfully", "count": insertCount})
 }
+func FetchStudentStatus(ctx *gin.Context) {
+	studentID := ctx.Param("student_id")
+	if studentID == "" {
+		utils.HandleError(ctx, errors.New("missing student_id parameter"), "Student ID is required", http.StatusBadRequest)
+		return
+	}
+
+	var status string
+	err := db.DB.Get(&status, "SELECT status FROM student_account WHERE id = $1 LIMIT 1", studentID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			utils.HandleError(ctx, err, "Student not found", http.StatusNotFound)
+			return
+		}
+		utils.HandleError(ctx, err, "Failed to fetch from the database", http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"status": status})
+}
+func HandleStudentStatusUpdate(ctx *gin.Context) {
+	studentID := ctx.Param("student_id")
+	var requestBody struct {
+		Status string `json:"status"`
+	}
+
+	if err := ctx.ShouldBindJSON(&requestBody); err != nil {
+		utils.HandleError(ctx, err, "Invalid request format", http.StatusBadRequest)
+		return
+	}
+
+	_, err := db.DB.Exec("UPDATE student_account SET status = $1 WHERE id = $2", requestBody.Status, studentID)
+	if err != nil {
+		utils.HandleError(ctx, err, "Failed to update the status", http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Status updated successfully"})
+}
