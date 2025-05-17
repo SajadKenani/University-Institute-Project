@@ -4,7 +4,7 @@ import { setClasses, setClassName, setShowAddClassForm, setShowCSVUploadForm, se
 import { DELETE, GET, getToken, POST, PUT } from "./Requests";
 import { HandleLogin } from "./Auth";
 
-const useFetchHandlers = () => {
+const useFetchHandlers = ({setLoadingClasses, setLoadingStudents}: any) => {
     const dispatch = useDispatch();
     const counter = useSelector((state: any) => state.reducer.counter);
     const selectedClass = useSelector((state: any) => state.reducer.selectedClass);
@@ -14,6 +14,7 @@ const useFetchHandlers = () => {
     const HandleClassesFetching = useCallback(async () => {
         const userId = localStorage.getItem("userId");
         if (!userId) return;
+        setLoadingClasses(true)
 
         try {
             const response = await GET(`api/fetch-classes/${Number(userId)}`);
@@ -22,12 +23,14 @@ const useFetchHandlers = () => {
             }
         } catch (error) {
             console.error(error);
-        }
+        } finally {setLoadingClasses(false)}
     }, [dispatch]);
 
     const HandleStudentsFetching = useCallback(async () => {
         const userId = localStorage.getItem("userId");
         if (!userId) return;
+        setLoadingStudents(true)
+      
         try {
             const response = await GET(`api/fetch-student-accounts/${Number(userId)}`);
             if (response.data && Array.isArray(response.data)) {
@@ -35,17 +38,19 @@ const useFetchHandlers = () => {
             }
         } catch (error) {
             console.error(error);
-        }
+        } finally {setLoadingStudents(false)}
     }, [dispatch]);
 
     const HandleStudentDeletion = useCallback(
         async (studentId: any) => {
+            setLoadingStudents(true)
             try {
                 await DELETE(`api/delete-student/${studentId}`);
                 await HandleStudentsFetching();
             } catch (error) {
                 console.error(error);
-            }
+                
+            } finally {setLoadingStudents(false)}
         },
         [HandleStudentsFetching]
     );

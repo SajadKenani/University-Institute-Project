@@ -17,11 +17,11 @@ import { SHOWADDSTUDENT } from "../components/UI/forms/showAddStudent";
 
 export const STUDENTS = () => {
 
-  
-
-
   const [className, setClassName] = useState<string>("");
-  
+
+  const [loadingClasses, setLoadingClasses] = useState(false);
+  const [loadingStudents, setLoadingStudents] = useState(false);
+
   const activeTab = useSelector((state: any) => state.reducer.activeTab);
   const showAddForm = useSelector((state: any) => state.reducer.showAddForm);
   const showAddClassForm = useSelector((state: any) => state.reducer.showAddClassForm);
@@ -29,11 +29,10 @@ export const STUDENTS = () => {
   const dispatch = useDispatch();
 
   const {
-    HandleStudentsFetching,
-    HandleClassesFetching,
+    HandleStudentsFetching, 
     HandleCSVSubmit,
     HandleClassInsertion
-} = useFetchHandlers();
+} = useFetchHandlers({setLoadingClasses, setLoadingStudents});
 
   const handleClassNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setClassName(e.target.value);
@@ -53,8 +52,7 @@ export const STUDENTS = () => {
 
   useEffect(() => {
     HandleStudentsFetching();
-    HandleClassesFetching();
-  }, [HandleStudentsFetching, HandleClassesFetching]);
+  }, [HandleStudentsFetching]);
 
   return (
     <div className="min-h-screen p-3 sm:p-6">
