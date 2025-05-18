@@ -14,9 +14,7 @@ export const STUDENTSTAB = () => {
   const searchTerm = useSelector((state: any) => state.reducer.searchTerm);
   const classes = useSelector((state: any) => state.reducer.classes); // Fixed property name
   const [filteredStudents, setFilteredStudents] = useState<any[]>([]);
-
   const [loadingStudents, setLoadingStudents] = useState(false);
-
 
   const {
     HandleStudentsFetching,
@@ -30,7 +28,6 @@ export const STUDENTSTAB = () => {
     HandleStudentsFetching();
   }, []);
 
-
   useEffect(() => {
     const myFilteredStudents: any = students.filter((student: any) =>
       student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -40,7 +37,6 @@ export const STUDENTSTAB = () => {
     setFilteredStudents(myFilteredStudents)
   }, [students, searchTerm]);
 
-  console.log(loadingStudents)
   return (
     <div className="bg-white rounded-xl shadow-xl overflow-hidden">
       {/* Search bar */}

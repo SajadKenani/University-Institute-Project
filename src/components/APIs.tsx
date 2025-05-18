@@ -1,15 +1,16 @@
 import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { setClasses, setClassName, setShowAddClassForm, setShowCSVUploadForm, setStudents } from "../redux/actions";
+import { setClasses, setShowAddClassForm, setShowCSVUploadForm, setStudents } from "../redux/actions";
 import { DELETE, GET, getToken, POST, PUT } from "./Requests";
 import { HandleLogin } from "./Auth";
 
-const useFetchHandlers = ({setLoadingClasses, setLoadingStudents}: any) => {
+const useFetchHandlers = ({setLoadingClasses, setLoadingStudents, tempClassName, setTempClassName}: any) => {
     const dispatch = useDispatch();
-    const counter = useSelector((state: any) => state.reducer.counter);
-    const selectedClass = useSelector((state: any) => state.reducer.selectedClass);
-    const SCVForm = useSelector((state: any) => state.reducer.SCVForm)
-    const className = useSelector((state: any) => state.reducer.className)
+      const { 
+        counter,
+        selectedClass,
+        SCVForm,
+      } = useSelector((state: any) => state.reducer);
 
     const HandleClassesFetching = useCallback(async () => {
         const userId = localStorage.getItem("userId");
@@ -130,35 +131,38 @@ const useFetchHandlers = ({setLoadingClasses, setLoadingStudents}: any) => {
         }
     };
 
-      const HandleClassInsertion = useCallback(async (e: React.FormEvent) => {
-        e.preventDefault();
+      const HandleClassInsertion = useCallback(async (event: React.FormEvent) => {
+        event.preventDefault();
 
         const userId = localStorage.getItem('userId');
+
+        console.log(tempClassName);
       
         if (!userId) {
           return;
         }
       
         // Validation
-        if (!className.trim()) {
+        if (!tempClassName.trim()) {
           // You can add a message for the user to know that the class name is required
+          console.log("Class name: " + tempClassName);
           return;
         }
       
         try {
           const response = await POST("api/insert-class", {
-            name: className.trim(),
+            name: tempClassName.trim(),
             author_id: Number(userId),
           });
       
           if (response && response.data) {
-            const newClass = { name: className.trim(), id: response.data.id ?? 0 };
+            const newClass = { name: tempClassName.trim(), id: response.data.id ?? 0 };
       
             // Update local state with the new class
             setClasses((prev: any) => [...prev, newClass]);
       
             // Reset form
-            dispatch(setClassName(""));
+            setTempClassName("");
       
             // Hide the form after successful submission
             dispatch(setShowAddClassForm(false));
