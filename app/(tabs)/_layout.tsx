@@ -1,15 +1,23 @@
 import { Tabs } from 'expo-router';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Image, Platform, StyleSheet, Text } from 'react-native';
 import { useFonts } from 'expo-font';
 import { ActivityIndicator, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
+import SignIn from '@/components/auth/register/signIn-main'; // You'll need to create this component
 
 import homeIcon from '@/assets/images/icons/home.png';
 import lecturesIcon from '@/assets/images/icons/lectures.png';
 import accountIcon from '@/assets/images/icons/account.png';
+
+const AUTH_TOKEN_KEY = 'auth_token';
+
+interface TabIconProps {
+  icon: any;
+  focused: boolean;
+}
 
 const icons = {
   home: homeIcon,
@@ -17,7 +25,7 @@ const icons = {
   account: accountIcon,
 };
 
-const TabIcon = ({ icon, focused }: { icon: any; focused: boolean }) => (
+const TabIcon = ({ icon, focused }: TabIconProps) => (
   <Image
     source={icon}
     style={[styles.icon, { tintColor: focused ? Colors.light.tint : '#888' }]}
@@ -26,17 +34,53 @@ const TabIcon = ({ icon, focused }: { icon: any; focused: boolean }) => (
 );
 
 export default function TabLayout() {
-  const [fontsLoaded] = useFonts({
-    Alexandria: require('../../assets/fonts/Alexandria-Thin.ttf'),
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
-  if (!fontsLoaded)
+  const [fontsLoaded] = useFonts({
+        Alexandria: require('../../assets/fonts/Alexandria-Thin.ttf'),
+      });
+
+
+  // Check if user is authenticated on component mount
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+        setIsAuthenticated(!!token);
+      } catch (error) {
+        console.error('Error checking authentication status:', error);
+        setIsAuthenticated(false);
+      }
+    };
+
+    checkAuthStatus();
+  }, []);
+
+  // Handle successful login
+  const handleLoginSuccess = async (token: string) => {
+    try {
+      await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error('Error saving auth token:', error);
+    }
+  };
+
+  // Show loading indicator while fonts are loading or checking auth status
+  if (!fontsLoaded || isAuthenticated === null) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.light.tint} />
       </View>
     );
+  }
 
+  // Show sign-in screen if not authenticated
+  if (!isAuthenticated) {
+    return <SignIn onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Show tab layout if authenticated
   return (
     <Tabs
       screenOptions={{
@@ -81,6 +125,11 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   icon: {
     width: 24,
     height: 24,
