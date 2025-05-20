@@ -29,9 +29,9 @@ export const STUDENTSTAB = () => {
   }, []);
 
   useEffect(() => {
-    const myFilteredStudents: any = students.filter((student: any) =>
-      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchTerm.toLowerCase())
+    const myFilteredStudents: any = students && students?.filter((student: any) =>
+      student?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student?.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     setFilteredStudents(myFilteredStudents)

@@ -5,7 +5,7 @@ import {
   BookOpen,
   FileText,
 } from "lucide-react";
-import { setSCVForm, setShowAddClassForm, setShowCSVUploadForm } from "../redux/actions";
+import { setClassName, setSCVForm, setShowAddClassForm, setShowCSVUploadForm } from "../redux/actions";
 import { useDispatch, useSelector } from "react-redux";
 import { HEADERNAV } from "../components/UI/headerNav";
 import { STUDENTSTAB } from "../components/UI/tabs/students";
@@ -31,19 +31,20 @@ export const STUDENTS = (): JSX.Element => {
     showAddForm,
     showAddClassForm,
     showCSVUploadForm,
+    className,
   } = useSelector((state: RootState) => state.reducer);
 
   const [loadingClasses, setLoadingClasses] = useState<boolean>(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [tempClassName, setTempClassName] = useState<string>("");
   
   const {
     HandleCSVSubmit,
     HandleClassInsertion
-  } = useFetchHandlers({ setLoadingClasses, tempClassName, setTempClassName });
+  } = useFetchHandlers({ setLoadingClasses });
 
   const handleClassNameChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    setTempClassName(e.target.value);
+    console.log(className)
+    dispatch(setClassName(e.target.value));
   };
 
   const handleCSVUpload = (event: React.ChangeEvent<HTMLInputElement>): void => {
@@ -69,9 +70,9 @@ export const STUDENTS = (): JSX.Element => {
   const handleSubmitClass = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
 
-    console.log(tempClassName)
+    console.log(className)
     
-    if (!tempClassName || tempClassName.trim() === '') {
+    if (!className || className.trim() === '') {
       // Show error notification to user
       alert("Please enter a class name");
       return;
@@ -180,10 +181,10 @@ export const STUDENTS = (): JSX.Element => {
                   <input
                     type="text"
                     name="className"
-                    value={tempClassName}
+                    value={className}
                     onChange={handleClassNameChange}
                     className="pr-10 w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="اسم الفصل (مثل: رياضيات 101)"
+                    placeholder="اسم الفصل"
                     required
                   />
                 </div>

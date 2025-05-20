@@ -1,193 +1,245 @@
 import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { setClasses, setShowAddClassForm, setShowCSVUploadForm, setStudents } from "../redux/actions";
+import {
+  setClasses as setClassesAction,
+  setStudents,
+  setShowAddClassForm,
+  setShowCSVUploadForm,
+  setShowAddForm
+} from "../redux/actions";
 import { DELETE, GET, getToken, POST, PUT } from "./Requests";
 import { HandleLogin } from "./Auth";
 
-const useFetchHandlers = ({setLoadingClasses, setLoadingStudents, tempClassName, setTempClassName}: any) => {
-    const dispatch = useDispatch();
-      const { 
-        counter,
-        selectedClass,
-        SCVForm,
-      } = useSelector((state: any) => state.reducer);
+interface RootState {
+  reducer: {
+    counter: number;
+    selectedClass: string;
+    SCVForm: FormData;
+    className: string;
+    newStudent: any
+  };
+}
 
-    const HandleClassesFetching = useCallback(async () => {
-        const userId = localStorage.getItem("userId");
-        if (!userId) return;
-        setLoadingClasses(true)
+const useFetchHandlers = ({
+  setLoadingClasses,
+  setLoadingStudents,
+  setClassName,
+  newStudent,
+}: any) => {
+  const dispatch = useDispatch();
+  const {
+    counter,
+    selectedClass,
+    SCVForm,
+    className,
 
-        try {
-            const response = await GET(`api/fetch-classes/${Number(userId)}`);
-            if (response.data && Array.isArray(response.data)) {
-                dispatch(setClasses(response.data));
-            }
-        } catch (error) {
-            console.error(error);
-        } finally {setLoadingClasses(false)}
-    }, [dispatch]);
+  } = useSelector((state: RootState) => state.reducer);
 
-    const HandleStudentsFetching = useCallback(async () => {
-        const userId = localStorage.getItem("userId");
-        if (!userId) return;
-        setLoadingStudents(true)
+  const HandleClassesFetching = useCallback(async () => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
+
+    setLoadingClasses(true);
+    try {
+      const response = await GET(`api/fetch-classes/${Number(userId)}`);
+      if (response.data && Array.isArray(response.data)) {
+        dispatch(setClassesAction(response.data));
+      }
+    } catch (error) {
+      console.error("Failed to fetch classes:", error);
+    } finally {
+      setLoadingClasses(false);
+    }
+  }, [dispatch, setLoadingClasses]);
+
+  const HandleStudentsFetching = useCallback(async () => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
+
+    setLoadingStudents(true);
+    try {
+      const response = await GET(`api/fetch-student-accounts/${Number(userId)}`);
+      if (response.data && Array.isArray(response.data)) {
+        console.log(response.data)
+        dispatch(setStudents(response.data));
+      }
+    } catch (error) {
+      console.error("Failed to fetch students:", error);
+    } finally {
+      setLoadingStudents(false);
+    }
+  }, [dispatch, setLoadingStudents]);
+
+  const HandleStudentDeletion = useCallback(
+    async (studentId: number) => {
+      setLoadingStudents(true);
+      try {
+        await DELETE(`api/delete-student/${studentId}`);
+        await HandleStudentsFetching();
+      } catch (error) {
+        console.error("Failed to delete student:", error);
+      } finally {
+        setLoadingStudents(false);
+      }
+    },
+    [HandleStudentsFetching, setLoadingStudents]
+  );
+
+  const HandleSettingStudentsToClasses = useCallback(async () => {
+    try {
+      await POST(`api/set-students-to-classes/${counter}`, {});
+      await HandleClassesFetching();
+      await HandleStudentsFetching();
+    } catch (error) {
+      console.error("Failed to assign students to classes:", error);
+    }
+  }, [counter, HandleClassesFetching, HandleStudentsFetching]);
+
+  const HandleClassAdjustment = useCallback(
+    async (studentId: number) => {
+      try {
+        await PUT(`api/update-class/${studentId}/${selectedClass}`, {});
+        await HandleStudentsFetching();
+        await HandleClassesFetching();
+      } catch (error) {
+        console.error("Failed to adjust class:", error);
+      }
+    },
+    [selectedClass, HandleStudentsFetching, HandleClassesFetching]
+  );
+
+  const HandleCSVSubmit = useCallback(async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    let authToken = await getToken();
+    if (!authToken) {
+      try {
+        await HandleLogin();
+        authToken = await getToken();
+        if (!authToken) throw new Error("Token not retrieved after login.");
+      } catch (error) {
+        console.error("Login failed:", error);
+        return;
+      }
+    }
+
+    const authorID = localStorage.getItem("userId");
+    if (!authorID) return;
+
+    try {
+      const res = await fetch(`http://localhost:8081/api/insert-via-csv/${authorID}`, {
+        method: "POST",
+        body: SCVForm,
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error(`Upload failed with status: ${res.status}`);
+      }
+    } catch (error) {
+      console.error("CSV upload error:", error);
+    } finally {
+      await HandleClassesFetching();
+      await HandleStudentsFetching();
+      dispatch(setShowCSVUploadForm(false));
+    }
+  }, [SCVForm, dispatch, HandleClassesFetching, HandleStudentsFetching]);
+
+  const HandleClassDeletion = useCallback(async (classId: number) => {
+     setLoadingClasses(true);
+    try {
+      await DELETE(`api/delete-class/${classId}`);
+    } catch (error) {
+      console.error("Failed to delete class:", error);
+    } finally {
+      HandleClassesFetching();
+    }
+  }, [HandleClassesFetching]);
+
+  const HandleClassInsertion = useCallback(
+    async (event: React.FormEvent) => {
+      event.preventDefault();
+      dispatch(setShowAddClassForm(false))
       
-        try {
-            const response = await GET(`api/fetch-student-accounts/${Number(userId)}`);
-            if (response.data && Array.isArray(response.data)) {
-                dispatch(setStudents(response.data));
-            }
-        } catch (error) {
-            console.error(error);
-        } finally {setLoadingStudents(false)}
-    }, [dispatch]);
+      const userId = localStorage.getItem("userId");
 
-    const HandleStudentDeletion = useCallback(
-        async (studentId: any) => {
-            setLoadingStudents(true)
-            try {
-                await DELETE(`api/delete-student/${studentId}`);
-                await HandleStudentsFetching();
-            } catch (error) {
-                console.error(error);
-                
-            } finally {setLoadingStudents(false)}
-        },
-        [HandleStudentsFetching]
-    );
+      if (!userId || !className.trim()) {
+        console.warn("Missing class name or user ID");
+        return;
+      }
+       
+      try {
+        await POST("api/insert-class", {
+          name: className.trim(),
+          author_id: Number(userId),
+        });
 
-    const HandleSettingStudentsToClasses = useCallback(async () => {
-        try {
-            await POST(`api/set-students-to-classes/${Number(counter)}`, {});
-            await HandleClassesFetching();
-            await HandleStudentsFetching();
-        } catch (error) {
-            console.error(error);
+      } catch (error) {
+        console.error("Error inserting class:", error);
+      } finally {
+        await HandleClassesFetching();
         }
-    }, [counter, HandleClassesFetching, HandleStudentsFetching]);
+    },
+    [className, setClassName, dispatch]
+  );
 
-    const HandleClassAdjustment = useCallback(
-        async (studentId: any) => {
-            try {
-                await PUT(`api/update-class/${studentId}/${Number(selectedClass)}`, {});
-                await HandleStudentsFetching();
-                await HandleClassesFetching();
-            } catch (error) {
-                console.error(error);
-            }
-        },
-        [selectedClass, HandleStudentsFetching, HandleClassesFetching]
-    );
+      const HandleStudentInsertion = useCallback(async (e: React.FormEvent) => {
+        e.preventDefault();
+        const userId = localStorage.getItem('userId');
+        console.log(newStudent)
 
-    const HandleCSVSubmit = async (event: any) => {
-        event.preventDefault();
-        let authToken = await getToken();
-        if (!authToken) {
-            try {
-                await HandleLogin();
-                authToken = await getToken();
-
-                if (!authToken) {
-                    throw new Error("Unable to retrieve token after login.");
-                }
-            } catch (error) {
-                console.error("Login failed:", error);
-                return;
-            }
+        if (!userId) {
+            return;
         }
 
-        const authorID = localStorage.getItem('userId');
-        if (!authorID) {
+        // Validation
+        if (!newStudent.name.trim()) {
+            return;
+        }
+
+        if (!newStudent.email.trim() || !newStudent.email.includes('@')) {
+            return;
+        }
+
+        if (newStudent.password.length < 6) {
             return;
         }
 
         try {
-            const res = await fetch(`http://localhost:8081/api/insert-via-csv/${authorID}`, {
-                method: "POST",
-                body: SCVForm,
-                headers: {
-                    Authorization: `Bearer ${authToken}`,
-                }
+            const response = await POST("api/create-student-account", {
+                name: newStudent.name.trim(),
+                email: newStudent.email.trim(),
+                password: newStudent.password,
+                author_id: Number(userId)
             });
 
-            if (!res.ok) {
-                throw new Error(`HTTP error! status: ${res.status}`);
+            if (response) {
+
+                // Hide the form after successful submission
+                dispatch(setShowAddForm(false));
+            } else {
+
             }
         } catch (error) {
-            console.error("CSV upload error:", error);
+            console.error(error);
         } finally {
-            HandleClassesFetching();
-            HandleStudentsFetching();
-            dispatch(setShowCSVUploadForm(false));
+            HandleStudentsFetching()
         }
-    };
+    }, [newStudent]);
 
-    const HandleClassDeletion = async (classId: number) => {
-        try {
-            await DELETE(`api/delete-class/${classId}`, {});
-        } catch (error) { console.log(error); }
-        finally {
-            HandleClassesFetching();
-        }
-    };
-
-      const HandleClassInsertion = useCallback(async (event: React.FormEvent) => {
-        event.preventDefault();
-
-        const userId = localStorage.getItem('userId');
-
-        console.log(tempClassName);
-      
-        if (!userId) {
-          return;
-        }
-      
-        // Validation
-        if (!tempClassName.trim()) {
-          // You can add a message for the user to know that the class name is required
-          console.log("Class name: " + tempClassName);
-          return;
-        }
-      
-        try {
-          const response = await POST("api/insert-class", {
-            name: tempClassName.trim(),
-            author_id: Number(userId),
-          });
-      
-          if (response && response.data) {
-            const newClass = { name: tempClassName.trim(), id: response.data.id ?? 0 };
-      
-            // Update local state with the new class
-            setClasses((prev: any) => [...prev, newClass]);
-      
-            // Reset form
-            setTempClassName("");
-      
-            // Hide the form after successful submission
-            dispatch(setShowAddClassForm(false));
-          }
-        } catch (error) {
-          console.error("Error inserting class:", error);
-        } finally {
-          // Fetch the updated list of classes
-          HandleClassesFetching();
-        }
-      }, []);
-
-      
-    
-
-    return {
-        HandleClassesFetching,
-        HandleStudentsFetching,
-        HandleStudentDeletion,
-        HandleSettingStudentsToClasses,
-        HandleClassAdjustment,
-        HandleCSVSubmit,
-        HandleClassDeletion,
-        HandleClassInsertion,
-    };
+  return {
+    HandleClassesFetching,
+    HandleStudentsFetching,
+    HandleStudentDeletion,
+    HandleSettingStudentsToClasses,
+    HandleClassAdjustment,
+    HandleCSVSubmit,
+    HandleClassDeletion,
+    HandleClassInsertion,
+    HandleStudentInsertion,
+  };
 };
 
 export default useFetchHandlers;

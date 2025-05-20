@@ -1,8 +1,8 @@
 import { UserPlus, X, User, Mail, Lock } from "lucide-react"
-import { setShowAddForm, setStudents } from "../../../redux/actions"
+import { setShowAddForm } from "../../../redux/actions"
 import { useDispatch } from "react-redux"
-import { useCallback, useState } from "react"
-import { POST } from "../../Requests"
+import { useState } from "react"
+import useFetchHandlers from "../../APIs"
 
 export const SHOWADDSTUDENT = () => {
     const dispatch = useDispatch()
@@ -13,57 +13,7 @@ export const SHOWADDSTUDENT = () => {
         class: "",
     });
 
-    const handleStudentInsertion = useCallback(async (e: React.FormEvent) => {
-        e.preventDefault();
-        const userId = localStorage.getItem('userId');
-
-        if (!userId) {
-            return;
-        }
-
-        // Validation
-        if (!newStudent.name.trim()) {
-            return;
-        }
-
-        if (!newStudent.email.trim() || !newStudent.email.includes('@')) {
-            return;
-        }
-
-        if (newStudent.password.length < 6) {
-            return;
-        }
-
-        try {
-            const response = await POST("api/create-student-account", {
-                name: newStudent.name.trim(),
-                email: newStudent.email.trim(),
-                password: newStudent.password,
-                author_id: Number(userId)
-            });
-
-            if (response) {
-                // Update local state
-                dispatch(setStudents((prev: any) => [...prev, { ...newStudent, id: response?.data?.id ? response.data.id : 0 }]));
-
-                // Reset form
-                setNewStudent({
-                    name: "",
-                    email: "",
-                    password: "",
-                    class: ""
-                });
-
-                // Hide the form after successful submission
-                dispatch(setShowAddForm(false));
-            } else {
-
-            }
-        } catch (error) {
-            console.error(error);
-        } finally {
-        }
-    }, [newStudent]);
+    const { HandleStudentInsertion } = useFetchHandlers({ newStudent });
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -89,7 +39,7 @@ export const SHOWADDSTUDENT = () => {
                     </button>
                 </div>
 
-                <form onSubmit={handleStudentInsertion} className="p-6 space-y-5">
+                <form onSubmit={HandleStudentInsertion} className="p-6 space-y-5">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             اسم الطالب
