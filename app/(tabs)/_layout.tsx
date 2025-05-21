@@ -8,9 +8,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '@/constants/Colors';
 import SignIn from '@/components/auth/register/signIn-main'; // You'll need to create this component
 
-import homeIcon from '@/assets/images/icons/home.png';
-import lecturesIcon from '@/assets/images/icons/lectures.png';
-import accountIcon from '@/assets/images/icons/account.png';
+const homeIcon = require("@/assets/images/icons/home.png");
+const lecturesIcon = require("@/assets/images/icons/lectures.png");
+const accountIcon = require("@/assets/images/icons/account.png");
 
 const AUTH_TOKEN_KEY = 'auth_token';
 
@@ -37,9 +37,8 @@ export default function TabLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   const [fontsLoaded] = useFonts({
-        Alexandria: require('../../assets/fonts/Alexandria-Thin.ttf'),
-      });
-
+    Alexandria: require('../../assets/fonts/Alexandria-Thin.ttf'),
+  });
 
   // Check if user is authenticated on component mount
   useEffect(() => {

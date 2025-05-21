@@ -1,12 +1,27 @@
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import { useFonts } from "expo-font";
-import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import { useState } from "react";
+import { View, Text, ActivityIndicator, StyleSheet, TouchableOpacity, Image } from "react-native";
+import Welcome from "./welcome";
+import { Ionicons } from '@expo/vector-icons';
+import Contact from "@/components/ui/contact";
+import useFetchHandlers from "@/components/APIs";
+import SpinningImage from "@/components/ui/spinner";
 
 export default function SignIn({ onLoginSuccess }: any) {
+  const [isWelcomeActivated, setIsWelcomeActivated] = useState(false);
+  const [isLoading , setIsLoading] = useState(false);
+  const [loginInfo, setLoginInfo] = useState({
+    email: '',
+    password: ''
+  });
+
   const [fontsLoaded] = useFonts({
     AlexandriaRegular: require('../../../assets/fonts/Alexandria-Regular.ttf'),
   });
+
+  const { HandleSignIn } = useFetchHandlers({ loginInfo, setIsLoading });
 
   if (!fontsLoaded) {
     return (
@@ -16,39 +31,61 @@ export default function SignIn({ onLoginSuccess }: any) {
     );
   }
 
+  if (!isWelcomeActivated) {
+    return <Welcome setIsWelcomeActivated={setIsWelcomeActivated} />
+  }
 
   return (
-    <View style={{ marginRight: 16, marginLeft: 16, marginTop: 20 }}>
-      <View>
-        <Text style={styles.signInUpperText}> تسجيل الدخول </Text>
+    <View style={{ marginHorizontal: 16, marginTop: 40 }}>
+      <View style={styles.upperBar}>
+        <TouchableOpacity onPress={() => setIsWelcomeActivated(false)}>
+          <Ionicons name="chevron-back" size={26} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.signInUpperText}>تسجيل الدخول</Text>
+        <Ionicons name="chevron-back" size={26} color="transparent" />
       </View>
 
-      <View>
-        <Text style={styles.helloText}> أهلا بعودتك </Text>
-      </View>
-      <View>
-        <Text style={styles.secondaryHelloText}> يرجى ادخال البريد الخاص بك و كلمة السر للمتابعة </Text>
-      </View>
+      {isLoading && (
+        <View style={{display: "flex", alignItems: "center", marginTop: 50}}> <SpinningImage size={35} /> </View>
+      )}
 
-      <Input placeholder="بريدك الالكتروني" />
-      <Input placeholder="كلمة السر" />
+      <Text style={styles.helloText}>أهلا بعودتك</Text>
+      <Text style={styles.secondaryHelloText}>
+        يرجى ادخال البريد الخاص بك و كلمة السر للمتابعة
+      </Text>
+
+      <Input
+       aria-disabled={isLoading}
+        placeholder="بريدك الالكتروني"
+        value={loginInfo.email}
+        onChangeText={(text) => setLoginInfo({ ...loginInfo, email: text })}
+      />
+      <Input
+        aria-disabled={isLoading}
+        placeholder="كلمة السر"
+        secureTextEntry
+        value={loginInfo.password}
+        onChangeText={(text) => setLoginInfo({ ...loginInfo, password: text })}
+      />
+
       <View style={{ marginTop: 10 }}>
-        <Button title="تسجيل الدخول" />
+        <Button disabled={isLoading} title="تسجيل الدخول" 
+        onPress={() => {setIsLoading(true); HandleSignIn()}} />
       </View>
       <View style={{ marginTop: 10 }}>
         <Button textOnly title="ليس لدي حساب" />
       </View>
-
+      <View style={{
+        marginTop: 40, flexDirection: "row", justifyContent: "center", alignItems: "center"
+      }}>
+        <Contact status="withTitle" title="الأتصال بالدعم" />
+      </View>
       <View style={{ marginTop: 120 }}>
-        <Text style={styles.privaryText}>
-          بأستخدامك للتطبيق فانت توافق ضمنيا على
-        </Text>
-        <Text style={styles.privacyBlueText}>
-          ساسية الاستخدام و الخصوصية
-        </Text>
+        <Text style={styles.privaryText}>بأستخدامك للتطبيق فانت توافق ضمنيا على</Text>
+        <Text style={styles.privacyBlueText}>ساسية الاستخدام و الخصوصية</Text>
       </View>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -57,13 +94,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 12,
   },
+  upperBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
   signInUpperText: {
     fontFamily: "AlexandriaRegular",
     color: "black",
     textAlign: "center",
     fontWeight: "bold",
     fontSize: 14,
-    marginTop: 20
+    marginTop: 6,
   },
   helloText: {
     fontFamily: "AlexandriaRegular",
@@ -71,7 +113,6 @@ const styles = StyleSheet.create({
     textAlign: "right",
     fontSize: 18,
     marginTop: 40,
-    marginBottom: 0
   },
   secondaryHelloText: {
     fontFamily: "AlexandriaRegular",
@@ -79,7 +120,7 @@ const styles = StyleSheet.create({
     textAlign: "right",
     fontSize: 12,
     marginBottom: 20,
-    marginTop: 4
+    marginTop: 4,
   },
   privaryText: {
     textAlign: "center",
@@ -93,5 +134,4 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#0076DD",
   }
-
 });

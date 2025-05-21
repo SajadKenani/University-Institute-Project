@@ -48,6 +48,7 @@ const Input: React.FC<InputProps> = ({
           placeholder={placeholder}
           accessibilityLabel={label || placeholder}
           {...props}
+          
         />
       </View>
       {error && <Text style={styles.errorText}>{error}</Text>}
@@ -75,7 +76,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     fontSize: 14,
     fontFamily: "AlexandriaRegular",
-    color: 'gray',
+    color: 'black',
     textAlign: "right",
     marginRight: 10,
     marginLeft: 10
