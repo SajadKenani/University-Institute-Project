@@ -21,7 +21,7 @@ export default function SignIn({ onLoginSuccess }: any) {
     AlexandriaRegular: require('../../../assets/fonts/Alexandria-Regular.ttf'),
   });
 
-  const { HandleSignIn } = useFetchHandlers({ loginInfo, setIsLoading });
+  const { HandleSignIn } = useFetchHandlers();
 
   if (!fontsLoaded) {
     return (
@@ -70,7 +70,7 @@ export default function SignIn({ onLoginSuccess }: any) {
 
       <View style={{ marginTop: 10 }}>
         <Button disabled={isLoading} title="تسجيل الدخول" 
-        onPress={() => {setIsLoading(true); HandleSignIn()}} />
+        onPress={() => {setIsLoading(true); HandleSignIn({loginInfo, setIsLoading})}} />
       </View>
       <View style={{ marginTop: 10 }}>
         <Button disabled={isLoading} textOnly title="ليس لدي حساب" />

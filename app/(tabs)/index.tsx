@@ -1,10 +1,15 @@
+import useFetchHandlers from '@/components/auth/APIs';
+import Announcement from '@/components/ui/announcement';
 import Contact from '@/components/ui/contact';
 import Line from '@/components/ui/line';
 import { useFonts } from 'expo-font';
+import React, { useEffect } from 'react';
 import { ActivityIndicator, Text, View, StyleSheet } from 'react-native';
-
+import Carousel from 'react-native-snap-carousel';
 
 export default function HomeScreen() {
+  const { HandleAccouncementsFetching } = useFetchHandlers();
+    
   const [fontsLoaded] = useFonts({
     AlexandriaRegular: require("../../assets/fonts/Alexandria-Regular.ttf"),
     AlexandriaBold: require("../../assets/fonts/Alexandria-Bold.ttf"),
@@ -18,8 +23,12 @@ export default function HomeScreen() {
       </View>
     );
   }
+
+  useEffect(() => {
+    HandleAccouncementsFetching
+  }, [])
   return (
-    <View style={{  marginTop: 60 }}>
+    <View style={{ marginTop: 60 }}>
       <View style={{ margin: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>``
         <View style={{ flexDirection: "row", justifyContent: "space-between", width: 70 }}>
           <Contact status="onlyIcon" />
@@ -32,7 +41,17 @@ export default function HomeScreen() {
         </View>
       </View>
 
+
+
       <Line />
+
+            <Carousel
+        renderItem={Announcement}
+        sliderWidth={20}
+        itemWidth={20 * 0.8}
+        loop={true}
+        autoplay={true} data={[]}
+      />
     </View>
   );
 }

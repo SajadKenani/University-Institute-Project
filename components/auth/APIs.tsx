@@ -1,9 +1,9 @@
 import { useCallback } from "react";
 import { POST } from "./Request";
 
-const useFetchHandlers = ({ loginInfo, setIsLoading }: 
+const useFetchHandlers = () => {
+  const HandleSignIn = useCallback(async ({ loginInfo, setIsLoading }: 
     { loginInfo: { email: string; password: string }, setIsLoading: any }) => {
-  const HandleSignIn = useCallback(async () => {
     console.log("Login info:", loginInfo);
     try {
       setIsLoading(true)
@@ -13,9 +13,15 @@ const useFetchHandlers = ({ loginInfo, setIsLoading }:
     } catch (err) {
       console.error("Sign-in error:", err);
     } finally {setIsLoading(false)}
-  }, [loginInfo]);
+  }, []);
 
-  return { HandleSignIn };
+  const HandleAccouncementsFetching = (async () => {
+    const response = await POST("api/fetch-announcements", {author_id: 3})
+    console.log(response)
+
+  })
+
+  return { HandleSignIn,  HandleAccouncementsFetching };
 };
 
 export default useFetchHandlers;
