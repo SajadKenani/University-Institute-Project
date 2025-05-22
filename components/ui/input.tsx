@@ -1,5 +1,5 @@
 import React from 'react';
-import { TextInput, View, StyleSheet, TextInputProps, ActivityIndicator } from 'react-native';
+import { TextInput, View, StyleSheet, TextInputProps, ActivityIndicator, Text } from 'react-native';
 import { useFonts } from 'expo-font';
 
 interface InputProps extends TextInputProps {
@@ -48,7 +48,6 @@ const Input: React.FC<InputProps> = ({
           placeholder={placeholder}
           accessibilityLabel={label || placeholder}
           {...props}
-          
         />
       </View>
       {error && <Text style={styles.errorText}>{error}</Text>}

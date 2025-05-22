@@ -6,7 +6,7 @@ import { View, Text, ActivityIndicator, StyleSheet, TouchableOpacity, Image } fr
 import Welcome from "./welcome";
 import { Ionicons } from '@expo/vector-icons';
 import Contact from "@/components/ui/contact";
-import useFetchHandlers from "@/components/APIs";
+import useFetchHandlers from "@/components/auth/APIs";
 import SpinningImage from "@/components/ui/spinner";
 
 export default function SignIn({ onLoginSuccess }: any) {
@@ -36,7 +36,7 @@ export default function SignIn({ onLoginSuccess }: any) {
   }
 
   return (
-    <View style={{ marginHorizontal: 16, marginTop: 40 }}>
+    <View style={{ marginHorizontal: 16, marginTop: 60 }}>
       <View style={styles.upperBar}>
         <TouchableOpacity onPress={() => setIsWelcomeActivated(false)}>
           <Ionicons name="chevron-back" size={26} color="#333" />
@@ -73,7 +73,7 @@ export default function SignIn({ onLoginSuccess }: any) {
         onPress={() => {setIsLoading(true); HandleSignIn()}} />
       </View>
       <View style={{ marginTop: 10 }}>
-        <Button textOnly title="ليس لدي حساب" />
+        <Button disabled={isLoading} textOnly title="ليس لدي حساب" />
       </View>
       <View style={{
         marginTop: 40, flexDirection: "row", justifyContent: "center", alignItems: "center"
@@ -103,7 +103,6 @@ const styles = StyleSheet.create({
     fontFamily: "AlexandriaRegular",
     color: "black",
     textAlign: "center",
-    fontWeight: "bold",
     fontSize: 14,
     marginTop: 6,
   },
@@ -133,5 +132,6 @@ const styles = StyleSheet.create({
     fontFamily: "AlexandriaRegular",
     fontSize: 11,
     color: "#0076DD",
+    marginTop: 4
   }
 });

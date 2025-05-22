@@ -12,8 +12,6 @@ const homeIcon = require("@/assets/images/icons/home.png");
 const lecturesIcon = require("@/assets/images/icons/lectures.png");
 const accountIcon = require("@/assets/images/icons/account.png");
 
-const AUTH_TOKEN_KEY = 'auth_token';
-
 interface TabIconProps {
   icon: any;
   focused: boolean;
@@ -37,14 +35,14 @@ export default function TabLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   const [fontsLoaded] = useFonts({
-    Alexandria: require('../../assets/fonts/Alexandria-Thin.ttf'),
+    Alexandria: require('../../assets/fonts/Alexandria-Regular.ttf'),
   });
 
   // Check if user is authenticated on component mount
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+        const token = await AsyncStorage.getItem("AUTH_TOKEN_KEY");
         setIsAuthenticated(!!token);
       } catch (error) {
         console.error('Error checking authentication status:', error);
@@ -58,7 +56,7 @@ export default function TabLayout() {
   // Handle successful login
   const handleLoginSuccess = async (token: string) => {
     try {
-      await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
+      await AsyncStorage.setItem("AUTH_TOKEN_KEY", token);
       setIsAuthenticated(true);
     } catch (error) {
       console.error('Error saving auth token:', error);
@@ -75,7 +73,7 @@ export default function TabLayout() {
   }
 
   // Show sign-in screen if not authenticated
-  if (!isAuthenticated) {
+  if (isAuthenticated) {
     return <SignIn onLoginSuccess={handleLoginSuccess} />;
   }
 
@@ -88,13 +86,17 @@ export default function TabLayout() {
         tabBarInactiveTintColor: '#888',
         tabBarLabelStyle: {
           fontFamily: 'Alexandria',
-          fontSize: 10,
+          fontSize: 12,
+          margin: 2,
+          
+        
         },
         tabBarStyle: {
           position: Platform.OS === 'ios' ? 'absolute' : 'relative',
-          borderTopWidth: 0,
+          borderTopWidth: 1,
           elevation: 0,
           backgroundColor: 'transparent',
+          
         },
       }}
     >
@@ -130,7 +132,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   icon: {
-    width: 24,
-    height: 24,
+    width: 26,
+    height: 26,
   },
 });

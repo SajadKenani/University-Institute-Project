@@ -61,7 +61,7 @@ export default function Button({
         onPressOut={() => setIsPressed(false)}
         disabled={disabled || loading}
         style={{
-          width: width,
+          width: width as import('react-native').DimensionValue,
         }}
       >
         <View style={[
@@ -135,6 +135,7 @@ const styles = StyleSheet.create({
   },
   textOnlyDisabledText: {
     color: '#0076DD', // Faded blue for disabled text-only
+    opacity: 0.6,
   },
   // Standard button states
   pressed: {

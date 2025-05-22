@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { POST } from "./auth/Request";
+import { POST } from "./Request";
 
 const useFetchHandlers = ({ loginInfo, setIsLoading }: 
     { loginInfo: { email: string; password: string }, setIsLoading: any }) => {
