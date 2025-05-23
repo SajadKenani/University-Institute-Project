@@ -76,6 +76,7 @@ func main() {
 		auth.GET("/api/announcements/:id", endpoints.HandleSpecifiedAnnouncementFetching)
 		auth.DELETE("/api/delete-announcement/:id", endpoints.HandleAnnouncementDeletion)
 		auth.POST("/api/fetch-announcements", endpoints.HandleFetchAccordingToAuthorID)
+		auth.GET("/api/fetch-all-announcements", endpoints.HandleAnnouncementsFetching)
 
 		auth.POST("/api/create-student-account", endpoints.HandleStudentCreation)
 		auth.POST("/api/sign-in-student", endpoints.HandleStudentSignInProcess)

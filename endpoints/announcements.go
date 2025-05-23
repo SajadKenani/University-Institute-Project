@@ -117,11 +117,11 @@ func HandleFetchAccordingToAuthorID(ctx *gin.Context) {
 
 	// Build a response struct that uses class name instead of ID
 	type AnnouncementWithAuthorName struct {
-		ID       int    `json:"id"`
-		Title    string `json:"title"`
-		Content  string `json:"content"`
-		AuthorID int    `json:"author_id"`
-		Date     string `json:"date"`
+		ID         int    `json:"id"`
+		Title      string `json:"title"`
+		Content    string `json:"content"`
+		AuthorID   int    `json:"author_id"`
+		Date       string `json:"date"`
 		AuthorName string `json:"author_name"`
 	}
 
@@ -130,11 +130,11 @@ func HandleFetchAccordingToAuthorID(ctx *gin.Context) {
 		authorName := classMap[announce.AuthorID]
 
 		accouncementWithAuthorName = append(accouncementWithAuthorName, AnnouncementWithAuthorName{
-			ID:       announce.ID,
-			Title:    announce.Title,
-			Content:  announce.Content,
-			AuthorID: announce.AuthorID,
-			Date:     announce.Date,
+			ID:         announce.ID,
+			Title:      announce.Title,
+			Content:    announce.Content,
+			AuthorID:   announce.AuthorID,
+			Date:       announce.Date,
 			AuthorName: authorName,
 		})
 	}
@@ -161,4 +161,15 @@ func HandleAnnouncementDeletion(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Announcement deleted successfully"})
+}
+func HandleAnnouncementsFetching(ctx *gin.Context) {
+	var announcement []handlers.Announcement
+	err := db.DB.Select(&announcement, "SELECT * FROM announcement")
+	if err != nil {
+		log.Println("Database Error:", err) // Logs full error for debugging
+		utils.HandleError(ctx, nil, "An error occurred", http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"data": announcement})
 }
