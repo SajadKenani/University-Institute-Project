@@ -346,6 +346,8 @@ func HandleSubjectFetching(ctx *gin.Context) {
 		return
 	}
 
+	log.Print(requestedBody.ID)
+
 	type StudentSubjects struct {
 		SubjectIDs pq.Int64Array `db:"subject_ids" json:"subject_ids"`
 	}
@@ -537,7 +539,7 @@ func HandleStudentStatusUpdate(ctx *gin.Context) {
 }
 func HandleSpecifiedStudentFetching(ctx *gin.Context) {
 	var Student handlers.Student
-	err := db.DB.Get(&Student, "SELECT name FROM student_account WHERE id = $1 LIMIT 1", ctx.Param("id"))
+	err := db.DB.Get(&Student, "SELECT name, grade FROM student_account WHERE id = $1 LIMIT 1", ctx.Param("id"))
 	if err != nil {
 		utils.HandleError(ctx, err, "Failed to fetch the student from the database", http.StatusInternalServerError)
 		return

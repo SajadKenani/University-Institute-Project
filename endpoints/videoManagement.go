@@ -150,7 +150,7 @@ func HandleVideosFetching(ctx *gin.Context) {
 }
 func HandleAllVideosFetching(ctx *gin.Context) {
 	var videos []handlers.Video
-	err := db.DB.Select(&videos, "SELECT id, author_id, thumbnail, url, compressed_url, title, create_at from videos")
+	err := db.DB.Select(&videos, "SELECT id, author_id, thumbnail, url, compressed_url, title, create_at, description from videos")
 	if err != nil {
 		utils.HandleError(ctx, nil, "Failed to fetch videos from the database", http.StatusInternalServerError)
 		return
