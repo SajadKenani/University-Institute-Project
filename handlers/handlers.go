@@ -21,18 +21,23 @@ type Announcement struct {
 	Date       string `json:"date" validate:"required" db:"date"`
 	AuthorID   int    `json:"author_id" db:"author_id"`
 	AuthorName string `json:"author_name" db:"author_name"`
+	Image      string `json:"image" db:"image"`
+	Loved      bool   `json:"loved" db:"loved"`
 }
 
 type Student struct {
-	ID         int    `json:"id,omitempty" db:"id"`
-	Name       string `json:"name" validate:"required" db:"name"`
-	Email      string `json:"email" validate:"required,email" db:"email"`
-	Password   string `json:"password" validate:"required,min=8" db:"password"`
-	Salt       string `json:"salt" db:"salt"`
-	GenID      string `json:"gen_id" db:"gen_id"`
-	AuthorID   int    `json:"author_id" db:"author_id"`
-	StudentIDs []int  `json:"subject_ids" db:"subject_ids"`
-	ClassID    *int   `json:"class_id" db:"class_id"`
+	ID                 int      `json:"id,omitempty" db:"id"`
+	Name               string   `json:"name" validate:"required" db:"name"`
+	Email              string   `json:"email" validate:"required,email" db:"email"`
+	Password           string   `json:"password" validate:"required,min=8" db:"password"`
+	Salt               string   `json:"salt" db:"salt"`
+	GenID              string   `json:"gen_id" db:"gen_id"`
+	AuthorID           int      `json:"author_id" db:"author_id"`
+	StudentIDs         []int    `json:"subject_ids" db:"subject_ids"`
+	ClassID            *int     `json:"class_id" db:"class_id"`
+	Grade              string   `json:"grade" db:"grade"`
+	Subjects           []string `json:"subjects" db:"subjects"`
+	LovedAnnouncements []int    `json:"loved_announcements" db:"loved_announcements"`
 }
 
 type Subject struct {
@@ -69,6 +74,7 @@ type Lecture struct {
 	AuthorID            int    `json:"author_id" db:"author_id"`
 	SeasonID            int    `json:"season_id" db:"season_id"`
 	SecretNumber        int    `json:"secret_number" db:"secret_number"`
+	Description         string `json:"description" db:"description"`
 	AttendenceValitaion int    `json:"is_attendence_valid" db:"is_attendence_valid"`
 	StartValidation     string `json:"start_validation" db:"start_validation"`
 	EndValidation       string `json:"end_validation" db:"end_validation"`
@@ -100,7 +106,7 @@ type Playlist struct {
 }
 
 type PlaylistVideo struct {
-	ID        int    `json:"id,omitempty" db:"id"`
-	PlaylistID int    `json:"playlist_id" db:"playlist_id"`
-	VideoID   int    `json:"video_id" db:"video_id"`
+	ID         int `json:"id,omitempty" db:"id"`
+	PlaylistID int `json:"playlist_id" db:"playlist_id"`
+	VideoID    int `json:"video_id" db:"video_id"`
 }

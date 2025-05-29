@@ -38,6 +38,7 @@ CREATE TABLE public.lecture (
     author_id INT NOT NULL REFERENCES public.admin_account(id) ON DELETE CASCADE,
     season_id INT NOT NULL REFERENCES public.season(id) ON DELETE CASCADE,
     secret_number INT NOT NULL UNIQUE,
+    description TEXT NOT NULL,
     is_attendence_valid INT NOT NULL DEFAULT 0 CHECK (is_attendence_valid IN (0, 1)),
     start_validation TIMESTAMP NOT NULL,
     end_validation TIMESTAMP NOT NULL
@@ -59,7 +60,8 @@ CREATE TABLE public.announcement (
     title TEXT NOT NULL,
     content TEXT NOT NULL,
     date DATE NOT NULL,
-    author_id INT NOT NULL REFERENCES public.admin_account(id) ON DELETE CASCADE
+    author_id INT NOT NULL REFERENCES public.admin_account(id) ON DELETE CASCADE,
+    image TEXT NOT NULL,
 );
 
 CREATE TABLE public.class (
@@ -83,6 +85,10 @@ CREATE TABLE public.student_account (
     status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspect', 'danger', 'inactive')),
     action_date TIMESTAMP NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE
+    class_name TEXT NOT NULL,
+    grade TEXT NOT NULL,
+    subjects TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    loved_announcements INT[] NOT NULL DEFAULT ARRAY[]::INT[],
 );
 
 CREATE TABLE public.attendence (

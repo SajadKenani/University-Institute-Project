@@ -104,7 +104,7 @@ func UploadVideo(ctx *gin.Context) {
 	video.URL = originalS3Key
 
 	// === Thumbnail generation ===
-	thumbnailPath, err := utils.HandleThumbnailGeneration(ctx, video)
+	thumbnailPath, err := utils.HandleThumbnailGeneration(ctx)
 	if err != nil {
 		log.Printf("Error generating thumbnail: %v", err)
 		utils.HandleError(ctx, nil, "Error generating thumbnail", http.StatusInternalServerError)
@@ -146,6 +146,17 @@ func HandleVideosFetching(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"videos": videos})
+
+}
+func HandleAllVideosFetching(ctx *gin.Context) {
+	var videos []handlers.Video
+	err := db.DB.Select(&videos, "SELECT id, author_id, thumbnail, url, compressed_url, title, create_at from videos")
+	if err != nil {
+		utils.HandleError(ctx, nil, "Failed to fetch videos from the database", http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"data": videos})
 
 }
 func StreamVideo(ctx *gin.Context) {
@@ -199,7 +210,7 @@ func HandlePlaylistCreation(ctx *gin.Context) {
 	playlist.CreatedAt = time.Now().Format("2006-01-02 15:04:05")
 
 	// === Thumbnail generation ===
-	thumbnailPath, err := utils.HandleThumbnailGeneration(ctx, playlist)
+	thumbnailPath, err := utils.HandleThumbnailGeneration(ctx)
 	if err != nil {
 		log.Printf("Error generating thumbnail: %v", err)
 		utils.HandleError(ctx, nil, "Error generating thumbnail", http.StatusInternalServerError)

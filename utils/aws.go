@@ -123,7 +123,7 @@ func UploadCompressedVideo(ctx *gin.Context, inputPath, outputPath string) (stri
 	return s3Key, nil
 }
 
-func HandleThumbnailGeneration(ctx *gin.Context, video interface{}) (string, error) {
+func HandleThumbnailGeneration(ctx *gin.Context) (string, error) {
 	// Handle thumbnail file upload
 	thumbnail, err := ctx.FormFile("thumbnail")
 	if err != nil {

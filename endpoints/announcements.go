@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 	"github.com/microcosm-cc/bluemonday"
 )
 
@@ -33,14 +34,23 @@ func HandleAnnouncementCreation(ctx *gin.Context) {
 	announcement.Title = p.Sanitize(announcement.Title)
 	announcement.Content = p.Sanitize(announcement.Content)
 
+	// === Thumbnail generation ===
+	imageGeneration, err := utils.HandleThumbnailGeneration(ctx)
+	if err != nil {
+		log.Printf("Error generating thumbnail: %v", err)
+		utils.HandleError(ctx, nil, "Error generating thumbnail", http.StatusInternalServerError)
+		return
+	}
+	announcement.Image = imageGeneration
+
 	// Get the current date
 	currentDate := time.Now().Format("2006-01-02")
 
 	// Insert into database
-	err := db.DB.QueryRow(`
-		INSERT INTO announcement (title, content, date, author_id) 
-		VALUES ($1, $2, $3::DATE, $4) RETURNING id`,
-		announcement.Title, announcement.Content, currentDate, announcement.AuthorID).Scan(&announcement.ID)
+	err = db.DB.QueryRow(`
+		INSERT INTO announcement (title, content, date, author_id, image) 
+		VALUES ($1, $2, $3::DATE, $4, $5) RETURNING id`,
+		announcement.Title, announcement.Content, currentDate, announcement.AuthorID, announcement.Image).Scan(&announcement.ID)
 
 	if err != nil {
 		log.Println("Database Error:", err) // Logs full error for debugging
@@ -163,13 +173,78 @@ func HandleAnnouncementDeletion(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Announcement deleted successfully"})
 }
 func HandleAnnouncementsFetching(ctx *gin.Context) {
-	var announcement []handlers.Announcement
-	err := db.DB.Select(&announcement, "SELECT * FROM announcement")
+	var announcements []handlers.Announcement
+	err := db.DB.Select(&announcements, "SELECT * FROM announcement")
 	if err != nil {
-		log.Println("Database Error:", err) // Logs full error for debugging
+		log.Println("Database Error:", err)
 		utils.HandleError(ctx, nil, "An error occurred", http.StatusInternalServerError)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"data": announcement})
+	// Get student loved announcements
+	var lovedAnnouncementIDs pq.Int64Array
+	err = db.DB.Get(&lovedAnnouncementIDs, `
+		SELECT lovedannouncements 
+		FROM student_account 
+		WHERE id = $1
+	`, ctx.Param("student_id"))
+	if err != nil {
+		log.Println("Database Error:", err)
+		utils.HandleError(ctx, nil, "An error occurred", http.StatusInternalServerError)
+		return
+	}
+
+	// Build a lookup map for fast checking
+	lovedMap := make(map[int64]bool)
+	for _, id := range lovedAnnouncementIDs {
+		lovedMap[id] = true
+	}
+
+	// Set the Loved flag based on the lookup map
+	for i := range announcements {
+		if lovedMap[int64(announcements[i].ID)] {
+			announcements[i].Loved = true
+		} else {
+			announcements[i].Loved = false
+		}
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"data": announcements})
+}
+
+func HandleLovingAnnouncement(ctx *gin.Context) {
+	announcementID := ctx.Param("announcement_id")
+	studentID := ctx.Param("student_id")
+
+	if announcementID == "" || studentID == "" {
+		utils.HandleError(ctx, nil, "Announcement ID is required", http.StatusBadRequest)
+		return
+	}
+
+	announcementIDInt, err := strconv.Atoi(announcementID)
+	if err != nil {
+		utils.HandleError(ctx, nil, "Failed to convert to number", http.StatusInternalServerError)
+		return
+	}
+	studentIDInt, err := strconv.Atoi(studentID)
+	if err != nil {
+		utils.HandleError(ctx, nil, "Failed to convert to number", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = db.DB.Exec(`
+		UPDATE student_account
+		SET lovedannouncements = 
+			CASE 
+				WHEN COALESCE(lovedannouncements, '{}') @> ARRAY[$1::int] THEN array_remove(COALESCE(lovedannouncements, '{}'), $1::int)
+				ELSE COALESCE(lovedannouncements, '{}') || $1::int
+			END
+		WHERE id = $2
+	`, strconv.Itoa(announcementIDInt), studentIDInt)
+	if err != nil {
+		utils.HandleError(ctx, nil, "Database update error", http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Toggled announcement in favorites successfully"})
 }

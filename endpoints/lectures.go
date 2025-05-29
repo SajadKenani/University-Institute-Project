@@ -23,8 +23,8 @@ func HandleLectureCreation(ctx *gin.Context) {
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	genNumber := rng.Intn(900000) + 100000 // Ensures a 6-digit number (100000 to 999999)
 
-	_, err := db.DB.Exec(`INSERT INTO lecture (name, author_id, season_id, secret_number) VALUES ($1, $2, $3, $4)`,
-		lecture.Name, lecture.AuthorID, lecture.SeasonID, genNumber)
+	_, err := db.DB.Exec(`INSERT INTO lecture (name, author_id, season_id, secret_number, description) VALUES ($1, $2, $3, $4, $5)`,
+		lecture.Name, lecture.AuthorID, lecture.SeasonID, genNumber, lecture.Description)
 	if err != nil {
 		utils.HandleError(ctx, err, "Failed to insert into the database", http.StatusBadRequest)
 		return
@@ -65,7 +65,7 @@ func HandleLectureDeletion(ctx *gin.Context) {
 }
 func HandleFetchingSpecifiedLecture(ctx *gin.Context) {
 	var lecture handlers.Lecture
-	err := db.DB.Get(&lecture, `SELECT id, name, secret_number, author_id, is_attendence_valid FROM lecture WHERE id = $1 LIMIT 1`, ctx.Param("id"))
+	err := db.DB.Get(&lecture, `SELECT id, name, secret_number, author_id, is_attendence_valid, description FROM lecture WHERE id = $1 LIMIT 1`, ctx.Param("id"))
 	if err != nil {
 		utils.HandleError(ctx, err, "Failed to fetch from the database", http.StatusBadRequest)
 		return
@@ -80,20 +80,22 @@ func HandleFetchingSpecifiedLecture(ctx *gin.Context) {
 
 	// Build response with author's name
 	type LectureWithAuthorName struct {
-		ID           int    `json:"id"`
-		Name         string `json:"name"`
-		SecretNumber int    `json:"secret_number"`
-		AuthorID     int    `json:"author_id"`
-		AuthorName   string `json:"author_name"`
-		IsAttendenceValid int `json:"is_attendence_valid"`
+		ID                int    `json:"id"`
+		Name              string `json:"name"`
+		SecretNumber      int    `json:"secret_number"`
+		AuthorID          int    `json:"author_id"`
+		Description       string `json:"description"`
+		AuthorName        string `json:"author_name"`
+		IsAttendenceValid int    `json:"is_attendence_valid"`
 	}
 
 	response := LectureWithAuthorName{
-		ID:           lecture.ID,
-		Name:         lecture.Name,
-		SecretNumber: lecture.SecretNumber,
-		AuthorID:     lecture.AuthorID,
-		AuthorName:   authorName,
+		ID:                lecture.ID,
+		Name:              lecture.Name,
+		SecretNumber:      lecture.SecretNumber,
+		AuthorID:          lecture.AuthorID,
+		AuthorName:        authorName,
+		Description:       lecture.Description,
 		IsAttendenceValid: lecture.AttendenceValitaion,
 	}
 

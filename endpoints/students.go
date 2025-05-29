@@ -48,8 +48,9 @@ func HandleStudentCreation(ctx *gin.Context) {
 	genID := uuid.New().String()
 
 	_, err = db.DB.Exec(`INSERT INTO student_account 
-	(name, email, password, salt, gen_id, author_id) VALUES ($1, $2, $3, $4, $5, $6)`,
-		Student.Name, Student.Email, hashedPasswordBase64, saltBase64, genID, Student.AuthorID)
+	(name, email, password, salt, gen_id, author_id, class_name, grade, subjects) 
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+		Student.Name, Student.Email, hashedPasswordBase64, saltBase64, genID, Student.AuthorID, Student.Grade, Student.Subjects)
 	if err != nil {
 		log.Println("Database Error:", err) // Logs full error for debugging
 		utils.HandleError(ctx, nil, "An error occurred", http.StatusInternalServerError)
@@ -62,7 +63,7 @@ func HandleStudentsFetching(ctx *gin.Context) {
 	author_id := ctx.Param("id")
 
 	var Students []handlers.Student
-	err := db.DB.Select(&Students, "SELECT id, name, email, class_id FROM student_account WHERE author_id = $1", author_id)
+	err := db.DB.Select(&Students, "SELECT id, name, email, class_id, grade FROM student_account WHERE author_id = $1", author_id)
 	if err != nil {
 		utils.HandleError(ctx, err, "Failed to fetch the data", http.StatusInternalServerError)
 		return
@@ -87,6 +88,7 @@ func HandleStudentsFetching(ctx *gin.Context) {
 		Name  string `json:"name"`
 		Email string `json:"email"`
 		Class string `json:"class"`
+		Grade string `json:"grade"`
 	}
 
 	var studentsWithNames []StudentWithClassName
@@ -104,6 +106,7 @@ func HandleStudentsFetching(ctx *gin.Context) {
 			Name:  student.Name,
 			Email: student.Email,
 			Class: className,
+			Grade: student.Grade,
 		})
 	}
 
@@ -531,4 +534,14 @@ func HandleStudentStatusUpdate(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Status updated successfully"})
+}
+func HandleSpecifiedStudentFetching(ctx *gin.Context) {
+	var Student handlers.Student
+	err := db.DB.Get(&Student, "SELECT name FROM student_account WHERE id = $1 LIMIT 1", ctx.Param("id"))
+	if err != nil {
+		utils.HandleError(ctx, err, "Failed to fetch the student from the database", http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Student fetched successfully", "data": Student})
 }

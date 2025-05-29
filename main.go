@@ -76,7 +76,8 @@ func main() {
 		auth.GET("/api/announcements/:id", endpoints.HandleSpecifiedAnnouncementFetching)
 		auth.DELETE("/api/delete-announcement/:id", endpoints.HandleAnnouncementDeletion)
 		auth.POST("/api/fetch-announcements", endpoints.HandleFetchAccordingToAuthorID)
-		auth.GET("/api/fetch-all-announcements", endpoints.HandleAnnouncementsFetching)
+		auth.GET("/api/fetch-all-announcements/:student_id", endpoints.HandleAnnouncementsFetching)
+		auth.POST("/api/love-announcement/:announcement_id/:student_id", endpoints.HandleLovingAnnouncement)
 
 		auth.POST("/api/create-student-account", endpoints.HandleStudentCreation)
 		auth.POST("/api/sign-in-student", endpoints.HandleStudentSignInProcess)
@@ -87,12 +88,14 @@ func main() {
 		auth.POST("/api/insert-via-csv/:author_id", endpoints.UploadViaCSV)
 		auth.GET("/api/fetch-student-status/:student_id", endpoints.FetchStudentStatus)
 		auth.POST("/api/update-student-status/:student_id", endpoints.HandleStudentStatusUpdate)
+		auth.GET("/api/fetch-specified-student/:id", endpoints.HandleSpecifiedStudentFetching)
 
 		auth.POST("/api/insert-subject", endpoints.HandleSubjectInsertion)
 		auth.POST("/api/fetch-subjects", endpoints.HandleSubjectFetching)
 		auth.DELETE("/api/delete-subject/:id", endpoints.HandleSubjectDeletion)
 
 		auth.POST("/api/fetch-videos", endpoints.HandleVideosFetching)
+		auth.GET("/api/fetch-all-videos", endpoints.HandleAllVideosFetching)
 		auth.GET("/api/stream-video/:id", endpoints.StreamVideo)
 		auth.POST("/api/upload-video", endpoints.UploadVideo)
 		auth.DELETE("/api/delete-video/:id", endpoints.HandleVideoRemoving)
