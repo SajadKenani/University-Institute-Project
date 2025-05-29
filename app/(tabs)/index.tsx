@@ -15,7 +15,13 @@ export default function HomeScreen() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [lectures, setLectures] = useState<any[]>([]);
   const [studentInfo, setStudentInfo] = useState<any>(null);
-  const { HandleAccouncementsFetching, HandleLecturesFetching, HandleStudentInfoFetching } = useFetchHandlers();
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const {
+    HandleAccouncementsFetching,
+    HandleLecturesFetching,
+    HandleStudentInfoFetching,
+    HandleSubjectsFetching
+  } = useFetchHandlers();
 
   const [fontsLoaded] = useFonts({
     AlexandriaRegular: require('../../assets/fonts/Alexandria-Regular.ttf'),
@@ -23,11 +29,15 @@ export default function HomeScreen() {
     AlexandriaSemiBold: require('../../assets/fonts/Alexandria-SemiBold.ttf'),
   });
 
+  const now = new Date();
+  const timeString = now.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
+  const amPm = timeString.split(' ')[1];
+
   useEffect(() => {
     HandleAccouncementsFetching(setAnnouncements);
     HandleLecturesFetching(setLectures)
     HandleStudentInfoFetching(setStudentInfo)
-    console.log(announcements)
+    HandleSubjectsFetching(setSubjects)
   }, []);
 
   if (!fontsLoaded) {
@@ -46,10 +56,10 @@ export default function HomeScreen() {
           <Contact status="onlyIcon" />
         </View>
         <View>
-          <Text style={styles.morningText}> مساء الخير! </Text>
+          <Text style={styles.morningText}> {amPm === "AM" ? "صباح الخير" : "مساء الخير"}! </Text>
           <Text style={styles.studentNameText}> {studentInfo?.name} </Text>
           <Text style={styles.classNameText}>
-            الدراســــة الأعدادية • الخامس الأعدادي
+            الدراســــة الأعدادية • {studentInfo?.grade}
           </Text>
         </View>
       </View>
@@ -89,7 +99,7 @@ export default function HomeScreen() {
       <Text style={styles.annoucementTitle}> المواد والمناهج </Text>
 
       <View style={{ height: 350, marginTop: 20, marginBottom: -180 }}>
-        {announcements?.length > 0 ? (
+        {subjects?.length > 0 ? (
           <ScrollView
             horizontal={true}
             showsHorizontalScrollIndicator={false}
@@ -99,11 +109,11 @@ export default function HomeScreen() {
               flexDirection: 'row-reverse' // RTL layout
             }}
           >
-            {announcements.map((item, index) => (
+            {subjects.map((item, index) => (
               <View
                 key={index}
                 style={{
-                  width: SCREEN_WIDTH / 4 - 20, // 1/3 of screen width minus margins
+                  width: SCREEN_WIDTH / 3 - 40, // 1/3 of screen width minus margins
                   marginLeft: 5, // Space between items
 
                 }}
@@ -120,7 +130,7 @@ export default function HomeScreen() {
       </View>
       <Line />
 
-            <Text style={styles.lecturesTitle}> اخر المحاضرات </Text>
+      <Text style={styles.lecturesTitle}> اخر المحاضرات </Text>
 
       <View style={{ height: 400, marginTop: 20 }}>
         {lectures?.length > 0 ? (
@@ -137,8 +147,8 @@ export default function HomeScreen() {
               <View
                 key={index}
                 style={{
-                  width: SCREEN_WIDTH / 2/0.8 - 20, // 1/3 of screen width minus margins
-                  marginLeft: 10, // Space between items
+                  width: SCREEN_WIDTH / 2 / 0.8 - 20, // 1/3 of screen width minus margins
+                  marginLeft: 10 // Space between items
 
                 }}
               >
