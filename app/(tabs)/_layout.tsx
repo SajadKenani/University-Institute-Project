@@ -42,7 +42,7 @@ export default function TabLayout() {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const token = await AsyncStorage.getItem("AUTH_TOKEN_KEY");
+        const token = await AsyncStorage.getItem("userToken");
         setIsAuthenticated(!!token);
       } catch (error) {
         console.error('Error checking authentication status:', error);
@@ -56,7 +56,7 @@ export default function TabLayout() {
   // Handle successful login
   const handleLoginSuccess = async (token: string) => {
     try {
-      await AsyncStorage.setItem("AUTH_TOKEN_KEY", token);
+      await AsyncStorage.setItem("userToken", token);
       setIsAuthenticated(true);
     } catch (error) {
       console.error('Error saving auth token:', error);
@@ -73,7 +73,7 @@ export default function TabLayout() {
   }
 
   // Show sign-in screen if not authenticated
-  if (isAuthenticated) {
+  if (!isAuthenticated) {
     return <SignIn onLoginSuccess={handleLoginSuccess} />;
   }
 

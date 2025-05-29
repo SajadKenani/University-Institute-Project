@@ -1,6 +1,7 @@
 import useFetchHandlers from '@/components/auth/APIs';
 import Announcement from '@/components/ui/announcement';
 import Contact from '@/components/ui/contact';
+import Lecture from '@/components/ui/lecture';
 import Line from '@/components/ui/line';
 import Subject from '@/components/ui/subject';
 import { useFonts } from 'expo-font';
@@ -9,11 +10,12 @@ import { ActivityIndicator, Text, View, StyleSheet, Dimensions, ScrollView } fro
 import Carousel from 'react-native-reanimated-carousel';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const windowDimensions = Dimensions.get('screen');
 
 export default function HomeScreen() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
-  const { HandleAccouncementsFetching } = useFetchHandlers();
+  const [lectures, setLectures] = useState<any[]>([]);
+  const [studentInfo, setStudentInfo] = useState<any>(null);
+  const { HandleAccouncementsFetching, HandleLecturesFetching, HandleStudentInfoFetching } = useFetchHandlers();
 
   const [fontsLoaded] = useFonts({
     AlexandriaRegular: require('../../assets/fonts/Alexandria-Regular.ttf'),
@@ -23,6 +25,8 @@ export default function HomeScreen() {
 
   useEffect(() => {
     HandleAccouncementsFetching(setAnnouncements);
+    HandleLecturesFetching(setLectures)
+    HandleStudentInfoFetching(setStudentInfo)
     console.log(announcements)
   }, []);
 
@@ -43,7 +47,7 @@ export default function HomeScreen() {
         </View>
         <View>
           <Text style={styles.morningText}> مساء الخير! </Text>
-          <Text style={styles.studentNameText}> محمد علي حسن </Text>
+          <Text style={styles.studentNameText}> {studentInfo?.name} </Text>
           <Text style={styles.classNameText}>
             الدراســــة الأعدادية • الخامس الأعدادي
           </Text>
@@ -71,7 +75,6 @@ export default function HomeScreen() {
               parallaxScrollingOffset: 32,
             }}
             mode="parallax"
-            onSnapToItem={(index) => console.log('current index:', index)}
             autoPlay={true}
             autoPlayInterval={3000}
             loop
@@ -85,7 +88,7 @@ export default function HomeScreen() {
 
       <Text style={styles.annoucementTitle}> المواد والمناهج </Text>
 
-      <View style={{ height: 350 }}>
+      <View style={{ height: 350, marginTop: 20, marginBottom: -180 }}>
         {announcements?.length > 0 ? (
           <ScrollView
             horizontal={true}
@@ -101,11 +104,45 @@ export default function HomeScreen() {
                 key={index}
                 style={{
                   width: SCREEN_WIDTH / 4 - 20, // 1/3 of screen width minus margins
-                  marginLeft: 20, // Space between items
+                  marginLeft: 5, // Space between items
 
                 }}
               >
                 <Subject item={item} />
+              </View>
+            ))}
+          </ScrollView>
+        ) : (
+          <Text style={{ textAlign: 'center', marginTop: 0 }}>
+            لا توجد مواد حالياً
+          </Text>
+        )}
+      </View>
+      <Line />
+
+            <Text style={styles.lecturesTitle}> اخر المحاضرات </Text>
+
+      <View style={{ height: 400, marginTop: 20 }}>
+        {lectures?.length > 0 ? (
+          <ScrollView
+            horizontal={true}
+            showsHorizontalScrollIndicator={false}
+            style={{ flex: 1 }}
+            contentContainerStyle={{
+              paddingHorizontal: 10,
+              flexDirection: 'row-reverse' // RTL layout
+            }}
+          >
+            {lectures.map((item, index) => (
+              <View
+                key={index}
+                style={{
+                  width: SCREEN_WIDTH / 2/0.8 - 20, // 1/3 of screen width minus margins
+                  marginLeft: 10, // Space between items
+
+                }}
+              >
+                <Lecture item={item} />
               </View>
             ))}
           </ScrollView>
@@ -165,4 +202,12 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginRight: 10,
   },
+  lecturesTitle: {
+    fontFamily: 'AlexandriaBold',
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'right',
+    marginTop: 30,
+    marginRight: 10,
+  }
 });

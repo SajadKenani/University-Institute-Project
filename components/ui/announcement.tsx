@@ -1,17 +1,28 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  ActivityIndicator,
+  TouchableOpacity,
+} from 'react-native';
 import { useFonts } from 'expo-font';
+import useFetchHandlers from '../auth/APIs';
 
 // Local images
 const announcementImg = require('@/assets/images/announcement.png');
 const loveIcon = require('@/assets/images/icons/love.png');
+const fulledLoveIcon = require('@/assets/images/icons/filledLove.png');
 const loveIconBg = require('@/assets/images/icons/loveBackground.png');
 
 interface AnnouncementProps {
   item: {
+    id?: number;
     title?: string;
     content?: string;
     image?: string;
+    loved?: boolean;
   };
 }
 
@@ -21,6 +32,15 @@ export default function Announcement({ item }: AnnouncementProps) {
     AlexandriaBold: require('../../assets/fonts/Alexandria-Bold.ttf'),
     AlexandriaSemiBold: require('../../assets/fonts/Alexandria-SemiBold.ttf'),
   });
+
+  const [loved, setLoved] = useState<boolean>(false);
+  const { HandleLovingAnnouncement } = useFetchHandlers();
+
+  useEffect(() => {
+    if (item?.loved) {
+      setLoved(true);
+    }
+  }, [item]);
 
   if (!fontsLoaded) {
     return (
@@ -32,21 +52,31 @@ export default function Announcement({ item }: AnnouncementProps) {
 
   if (!item) return null;
 
+  const handleLoveToggle = () => {
+    setLoved((prev) => !prev);
+    if (item.id) HandleLovingAnnouncement(item.id);
+  };
+
   return (
     <View style={styles.container}>
       <Image source={announcementImg} style={styles.image} />
-
       <View style={styles.textContainer}>
         <Text style={styles.title}>{item.title || 'لا يوجد عنوان'}</Text>
-
-        <View style={styles.loveContainer}>
+        <TouchableOpacity
+          style={styles.loveContainer}
+          onPress={handleLoveToggle}
+        >
           <Image source={loveIconBg} style={styles.loveBg} />
-          <Image source={loveIcon} style={styles.loveIcon} />
-        </View>
+          <Image
+            source={loved ? fulledLoveIcon : loveIcon}
+            style={styles.loveIcon}
+          />
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,

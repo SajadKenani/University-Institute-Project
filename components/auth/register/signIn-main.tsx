@@ -1,13 +1,14 @@
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import { useFonts } from "expo-font";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, StyleSheet, TouchableOpacity, Image } from "react-native";
 import Welcome from "./welcome";
 import { Ionicons } from '@expo/vector-icons';
 import Contact from "@/components/ui/contact";
 import useFetchHandlers from "@/components/auth/APIs";
 import SpinningImage from "@/components/ui/spinner";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function SignIn({ onLoginSuccess }: any) {
   const [isWelcomeActivated, setIsWelcomeActivated] = useState(false);
@@ -31,6 +32,8 @@ export default function SignIn({ onLoginSuccess }: any) {
     );
   }
 
+ 
+
   if (!isWelcomeActivated) {
     return <Welcome setIsWelcomeActivated={setIsWelcomeActivated} />
   }
@@ -46,7 +49,8 @@ export default function SignIn({ onLoginSuccess }: any) {
       </View>
 
       {isLoading && (
-        <View style={{display: "flex", alignItems: "center", marginTop: 50}}> <SpinningImage size={35} /> </View>
+        <View style={{display: "flex", alignItems: "center", marginTop: 50}}> 
+        <SpinningImage size={35} /> </View>
       )}
 
       <Text style={styles.helloText}>أهلا بعودتك</Text>
