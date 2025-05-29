@@ -48,7 +48,7 @@ func HandleStudentCreation(ctx *gin.Context) {
 	genID := uuid.New().String()
 
 	_, err = db.DB.Exec(`INSERT INTO student_account 
-	(name, email, password, salt, gen_id, author_id, class_name, grade, subjects) 
+	(name, email, password, salt, gen_id, author_id, grade, subjects) 
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
 		Student.Name, Student.Email, hashedPasswordBase64, saltBase64, genID, Student.AuthorID, Student.Grade, Student.Subjects)
 	if err != nil {
@@ -345,8 +345,6 @@ func HandleSubjectFetching(ctx *gin.Context) {
 		utils.HandleError(ctx, err, "Invalid request format", http.StatusBadRequest)
 		return
 	}
-
-	log.Print(requestedBody.ID)
 
 	type StudentSubjects struct {
 		SubjectIDs pq.Int64Array `db:"subject_ids" json:"subject_ids"`
